@@ -14,7 +14,11 @@ src = io.open("index.html", encoding="utf-8").read()
 # except in the decks that are proper nouns by nature, plus a short list of compounds
 # that behave as one lexical item. Anything else is a phrase and gets flagged here.
 PROPER = {"places", "screen", "toons", "people", "tales", "holidays",
-          "brands", "heroes", "games", "retro"}
+          "brands", "heroes", "games", "retro", "celebs", "creatures"}
+# Two lists are phrases on purpose: the situation IS the joke ("step on a Lego"), and a
+# sports move only reads as a move when it is named as one ("slam dunk"). The research on
+# real decks is explicit that this is where the laughs come from, so they skip the check.
+PHRASE_BY_DESIGN = {"awkward", "moves"}
 COMPOUND_OK = {
     "hot dog", "french fries", "ice cream", "bubble tea", "hot pot", "dim sum", "egg tart",
     "fried rice", "peanut butter", "chicken wing", "fried egg", "fish and chips", "cotton candy",
@@ -53,7 +57,7 @@ COMPOUND_OK = {
     "haunted castle", "wishing well", "talking mirror", "404 error",
     "watering can", "bad breath", "group project", "ice cream truck", "fitting room",
     "black friday", "flash sale", "bowling alley", "water ski", "hot spring", "ping pong",
-    "chicken dance",
+    "chicken dance", "stinky tofu", "sunny side up", "instant noodles", "all you can eat",
 }
 
 def audit(src_text):
@@ -66,7 +70,7 @@ def audit(src_text):
     os.unlink(path)
     bad = []
     for d in decks:
-        if d["id"] in PROPER:
+        if d["id"] in PROPER or d["id"] in PHRASE_BY_DESIGN:
             continue
         for w in d["words"]:
             if " " in w and w.lower() not in COMPOUND_OK:
