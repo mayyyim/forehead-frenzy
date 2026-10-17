@@ -1,0 +1,771 @@
+<title>Forehead Frenzy</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Chivo:ital,wght@0,400;0,600;0,800;1,400&display=swap">
+<style>
+  /* Served standalone, so the baseline the artifact runtime used to supply lives here.
+     [hidden] must win: .screen sets display:flex, and an author rule beats the UA
+     default of display:none, which would otherwise show every screen at once. */
+  [hidden]{display:none !important}
+  img,svg{max-width:100%}
+  :root{
+    --ink:#190E33;
+    --ink-2:#221340;
+    --card:#2E1B57;
+    --card-hi:#3A2369;
+    --cream:#F8F1E3;
+    --lav:#B0A0D4;
+    --lav-dim:#7C6CA3;
+    --amber:#FFC247;
+    --amber-deep:#E39B12;
+    --good:#3ED598;
+    --bad:#FF6B6B;
+    --r:16px;
+    --display:"Anton","Haettenschweiler","Arial Narrow",sans-serif;
+    --body:"Chivo","Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--cream);
+    font-family:var(--body);
+    -webkit-tap-highlight-color:transparent;
+    -webkit-text-size-adjust:100%;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+  }
+  button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none}
+  :focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+
+  .screen{min-height:100dvh;display:flex;flex-direction:column}
+  #screen-setup{padding-block:28px 40px;padding-left:18px;padding-right:18px;gap:26px;max-width:620px;margin:0 auto;width:100%}
+
+  /* ---- marquee + title ---- */
+  .marquee{display:flex;gap:9px;justify-content:center}
+  .marquee i{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px rgba(255,194,71,.75);animation:bulb 1.6s infinite}
+  @keyframes bulb{0%,100%{opacity:.25}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.marquee i{animation:none;opacity:.8}}
+  .eyebrow{font-size:.68rem;letter-spacing:.32em;text-transform:uppercase;color:var(--lav);text-align:center;margin:14px 0 4px}
+  h1{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.02em;
+     font-size:clamp(2.6rem,13vw,4.4rem);line-height:.88;margin:0;text-align:center;text-wrap:balance}
+  h1 span{display:block;color:var(--amber)}
+  .tagline{text-align:center;color:var(--lav);font-size:.95rem;margin:12px auto 0;max-width:34ch;line-height:1.5}
+
+  /* ---- sections ---- */
+  .block{display:flex;flex-direction:column;gap:12px}
+  .label{font-size:.68rem;letter-spacing:.26em;text-transform:uppercase;color:var(--lav-dim);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .label b{font-weight:600;letter-spacing:.08em;color:var(--lav);text-transform:none;font-size:.78rem}
+
+  .catwrap{display:flex;flex-direction:column;gap:15px}
+  .catgroup{font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--amber);opacity:.8;margin:0 0 -5px}
+  .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:9px}
+  .cat.wide{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .cat.wide .c{margin-top:0}
+  .cat{background:var(--card);border-radius:var(--r);padding:13px 13px 11px;text-align:left;
+       border:2px solid transparent;transition:background .14s,border-color .14s,transform .08s}
+  .cat:active{transform:scale(.975)}
+  .cat .n{font-family:var(--display);text-transform:uppercase;font-size:1.02rem;line-height:1.08;letter-spacing:.01em;display:block}
+  .cat .c{font-size:.68rem;color:var(--lav-dim);letter-spacing:.14em;margin-top:5px;display:block;font-variant-numeric:tabular-nums}
+  .cat[aria-pressed="true"]{background:var(--card-hi);border-color:var(--amber)}
+  .cat[aria-pressed="true"] .n{color:var(--amber)}
+  .cat[aria-pressed="true"] .c{color:var(--lav)}
+  .mixcard{background:linear-gradient(100deg,#2E1B57,#3A2369);border:2px dashed #52397F}
+  .mixcard .n{font-size:.94rem}
+  .mixcard[aria-pressed="true"]{border-style:solid;border-color:var(--amber)}
+  .mega{background:linear-gradient(100deg,#3A2369,#52397F)}
+  .mega .n{font-size:1.05rem}
+
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;background:var(--card);border-radius:12px;padding:12px 4px;font-family:var(--display);
+              font-size:1.05rem;border:2px solid transparent;font-variant-numeric:tabular-nums}
+  .seg button small{display:block;font-family:var(--body);font-size:.6rem;letter-spacing:.2em;color:var(--lav-dim);margin-top:3px}
+  .seg button[aria-pressed="true"]{background:var(--card-hi);border-color:var(--amber);color:var(--amber)}
+  .seg button[aria-pressed="true"] small{color:var(--lav)}
+
+  .modes{display:flex;gap:8px}
+  .modes button{flex:1;background:var(--card);border-radius:12px;padding:12px;border:2px solid transparent;text-align:left}
+  .modes button strong{display:block;font-size:.9rem;font-weight:800}
+  .modes button em{display:block;font-style:normal;font-size:.72rem;color:var(--lav-dim);margin-top:3px;line-height:1.35}
+  .modes button[aria-pressed="true"]{background:var(--card-hi);border-color:var(--amber)}
+  .modes button[aria-pressed="true"] strong{color:var(--amber)}
+
+  /* ---- tilt check ---- */
+  .sensor{background:var(--ink-2);border:1px solid #352257;border-radius:var(--r);padding:14px}
+  .sensor .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .sensor .msg{font-size:.8rem;color:var(--lav);line-height:1.45}
+  .sensor .msg.warn{color:var(--amber)}
+  .mini{border:1.5px solid var(--lav-dim);border-radius:999px;padding:7px 13px;font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--lav);white-space:nowrap}
+  .diag{font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--lav-dim);
+        margin:11px 0 0;word-break:break-word;border-top:1px solid #352257;padding-top:9px}
+  .meter{margin-top:13px}
+  .meter .track{position:relative;height:16px;border-radius:999px;background:#120A26;overflow:hidden}
+  .meter .fill{position:absolute;top:0;bottom:0;left:50%;width:0;background:var(--lav-dim);transition:none}
+  .meter .fill.good{background:var(--good)}
+  .meter .fill.bad{background:var(--bad)}
+  .meter .mid{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#4A3570}
+  .meter .ends{display:flex;justify-content:space-between;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--lav-dim);margin-top:7px}
+  .meter .ends b{color:var(--good);font-weight:600}
+  .meter .ends i{color:var(--bad);font-style:normal;font-weight:600}
+
+  /* ---- start ---- */
+  .start{background:var(--amber);color:#2A1700;border-radius:var(--r);padding:20px;font-family:var(--display);
+         text-transform:uppercase;font-size:1.7rem;letter-spacing:.03em;box-shadow:0 7px 0 var(--amber-deep);transition:transform .08s,box-shadow .08s}
+  .start:active{transform:translateY(4px);box-shadow:0 3px 0 var(--amber-deep)}
+  .best{text-align:center;font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:var(--lav-dim);font-variant-numeric:tabular-nums}
+  .build{text-align:center;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+         letter-spacing:.14em;color:#5B4A85;margin:0}
+  .howto{border-top:1px solid #30204F;padding-top:18px;color:var(--lav-dim);font-size:.8rem;line-height:1.65}
+  .howto strong{color:var(--lav);font-weight:600}
+  .howto ol{margin:8px 0 0;padding-left:1.3em}
+  .howto li{margin-bottom:5px}
+
+  /* ---- countdown ---- */
+  #screen-count{align-items:center;justify-content:center;text-align:center;gap:18px;padding:24px}
+  #screen-count .kicker{font-family:var(--display);text-transform:uppercase;font-size:clamp(1.3rem,6vw,2rem);color:var(--amber);line-height:1.05;text-wrap:balance}
+  #countNum{font-family:var(--display);font-size:clamp(7rem,38vw,16rem);line-height:.8;color:var(--cream)}
+  #screen-count .sub{color:var(--lav);font-size:.9rem}
+
+  /* ---- play ---- */
+  #screen-play{position:relative;justify-content:space-between;align-items:center;text-align:center;padding-block:0 0}
+  #bar{position:absolute;top:0;left:0;height:7px;background:var(--amber);width:100%;transition:width .2s linear}
+  #bar.low{background:var(--bad)}
+  .playtop{width:100%;padding:17px 16px 0;display:flex;flex-direction:column;gap:10px;align-items:center}
+  .hud{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  #clock{font-family:var(--display);font-size:2.1rem;line-height:1;font-variant-numeric:tabular-nums}
+  #clock.low{color:var(--bad)}
+  .tally{display:flex;gap:7px;align-items:center;font-size:.8rem;font-variant-numeric:tabular-nums}
+  .tally span{padding:5px 10px;border-radius:999px;font-weight:600}
+  .tally .t-good{background:rgba(62,213,152,.16);color:var(--good)}
+  .tally .t-bad{background:rgba(255,107,107,.16);color:var(--bad)}
+  #quit{border:1.5px solid #4A3570;border-radius:999px;width:34px;height:34px;font-size:1rem;color:var(--lav-dim);flex:none}
+  .hint{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--lav-dim)}
+  .hint.up{color:var(--bad);opacity:.85}
+  .hint.down{color:var(--good);opacity:.85;padding-bottom:20px}
+  #word{font-family:var(--display);text-transform:uppercase;font-size:clamp(2.1rem,11.5vw,7.5rem);line-height:.94;
+        letter-spacing:.01em;text-wrap:balance;padding:10px 4vw;max-width:14ch}
+  .zone{position:absolute;left:0;right:0;height:34%;z-index:5;background:none}
+  .zone.top{top:0}
+  .zone.bot{bottom:0}
+
+  #flash{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;
+         gap:10px;opacity:0;pointer-events:none;transition:opacity .13s ease-out;color:#10210F}
+  #flash.on{opacity:1}
+  #flash.good{background:var(--good)}
+  #flash.bad{background:var(--bad);color:#3A0C0C}
+  #flash .v{font-family:var(--display);text-transform:uppercase;font-size:clamp(2.6rem,15vw,7rem);line-height:.9}
+  #flash .w{font-size:1rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.75;padding:0 6vw;text-align:center}
+
+  /* ---- results ---- */
+  #screen-done{padding:30px 18px 36px;gap:20px;max-width:620px;margin:0 auto;width:100%}
+  .scorecard{background:var(--card);border-radius:var(--r);padding:22px;text-align:center}
+  .scorecard .cat-name{font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--lav-dim)}
+  .scorecard .big{font-family:var(--display);font-size:clamp(4rem,22vw,7rem);line-height:.84;color:var(--amber);margin:8px 0 2px;font-variant-numeric:tabular-nums}
+  .scorecard .unit{font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;color:var(--lav)}
+  .newbest{display:inline-block;margin-top:13px;background:var(--amber);color:#2A1700;font-weight:800;font-size:.7rem;
+           letter-spacing:.18em;text-transform:uppercase;padding:6px 12px;border-radius:999px}
+  .recap{display:flex;flex-direction:column;gap:5px;max-height:38dvh;overflow-y:auto}
+  .recap div{display:flex;gap:10px;align-items:baseline;background:var(--ink-2);border-left:4px solid var(--good);
+             border-radius:8px;padding:9px 12px;font-size:.92rem}
+  .recap div.miss{border-left-color:var(--bad);color:var(--lav)}
+  .recap div b{font-family:var(--display);font-size:.9rem;width:1.1em;flex:none;color:var(--good)}
+  .recap div.miss b{color:var(--bad)}
+  .actions{display:flex;flex-direction:column;gap:9px}
+  .again{background:var(--amber);color:#2A1700;border-radius:var(--r);padding:17px;font-family:var(--display);
+         text-transform:uppercase;font-size:1.35rem;letter-spacing:.03em;box-shadow:0 6px 0 var(--amber-deep)}
+  .again:active{transform:translateY(3px);box-shadow:0 3px 0 var(--amber-deep)}
+  .ghost{border:1.5px solid #4A3570;border-radius:var(--r);padding:15px;font-size:.84rem;letter-spacing:.16em;text-transform:uppercase;color:var(--lav)}
+
+  #oops{position:fixed;left:10px;right:10px;bottom:10px;z-index:90;background:var(--bad);color:#2B0606;
+        font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:11px 13px;border-radius:12px;
+        word-break:break-word}
+
+  @media (orientation:landscape) and (max-height:520px){
+    #screen-setup{max-width:760px}
+    .hint.down{padding-bottom:12px}
+    .playtop{padding-top:12px}
+  }
+</style>
+
+<main>
+  <!-- ===================== SETUP ===================== -->
+  <section class="screen" id="screen-setup">
+    <div>
+      <div class="marquee" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <p class="eyebrow">English charades &middot; <span id="wordTotal">&hellip;</span></p>
+      <h1>Forehead<span>Frenzy</span></h1>
+      <p class="tagline">One phone on your forehead. Everyone else acts it out. Tilt down when they get it, up to pass.</p>
+    </div>
+
+    <div class="block">
+      <div class="label">Category <b id="catPick">Animals</b></div>
+      <div class="catwrap" id="cats" role="group" aria-label="Category"></div>
+    </div>
+
+    <div class="block">
+      <div class="label">Round length</div>
+      <div class="seg" id="times" role="group" aria-label="Round length"></div>
+    </div>
+
+    <div class="block">
+      <div class="label">Controls</div>
+      <div class="modes" role="group" aria-label="Controls">
+        <button id="mTilt" aria-pressed="true"><strong>Tilt the phone</strong><em>Hold it on your forehead</em></button>
+        <button id="mTap" aria-pressed="false"><strong>Tap the screen</strong><em>Works anywhere</em></button>
+      </div>
+
+      <div class="sensor" id="sensor">
+        <div class="row">
+          <p class="msg" id="sensorMsg">Tap <strong>Enable tilt</strong> to let this page read the phone's position.</p>
+          <button class="mini" id="enableBtn">Enable tilt</button>
+        </div>
+        <p class="diag" id="diag" hidden></p>
+        <div class="meter" id="meter" hidden>
+          <div class="track"><div class="fill" id="fill"></div><div class="mid"></div></div>
+          <div class="ends"><b>&#9660; Down = got it</b><i>Up = pass &#9650;</i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <button class="start" id="startBtn">Start round</button>
+      <p class="best" id="bestLine">No score yet</p>
+      <p class="build">build 6 &middot; 2026-10-17</p>
+    </div>
+
+    <div class="howto">
+      <strong>How to play</strong>
+      <ol>
+        <li>Pick a category, hit start, put the phone face-out on your forehead.</li>
+        <li>Your friends describe or act out the word &mdash; in English, no saying the word itself.</li>
+        <li>Tilt the screen <strong>down</strong> when they nail it, <strong>up</strong> to skip. Keep going until the buzzer.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== COUNTDOWN ===================== -->
+  <section class="screen" id="screen-count" hidden>
+    <p class="kicker" id="countKicker">Phone on your forehead</p>
+    <div id="countNum">3</div>
+    <p class="sub" id="countSub">Screen facing your friends</p>
+  </section>
+
+  <!-- ===================== PLAY ===================== -->
+  <section class="screen" id="screen-play" hidden>
+    <div id="bar"></div>
+    <div class="playtop">
+      <div class="hud">
+        <div id="clock">60</div>
+        <div class="tally"><span class="t-good" id="tGood">0</span><span class="t-bad" id="tBad">0</span></div>
+        <button id="quit" aria-label="End round">&#10005;</button>
+      </div>
+      <p class="hint up" id="hintUp">&#9650; Up &mdash; pass</p>
+    </div>
+    <h2 id="word">Ready</h2>
+    <p class="hint down" id="hintDown">&#9660; Down &mdash; got it</p>
+    <button class="zone top" id="zoneTop" aria-label="Pass"></button>
+    <button class="zone bot" id="zoneBot" aria-label="Got it"></button>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section class="screen" id="screen-done" hidden>
+    <div class="scorecard">
+      <p class="cat-name" id="doneCat">Animals &middot; 60s</p>
+      <div class="big" id="doneScore">0</div>
+      <p class="unit" id="doneUnit">correct</p>
+      <div id="bestBadge" hidden><span class="newbest">New best</span></div>
+    </div>
+    <div class="block">
+      <div class="label">The deck <b id="doneSplit"></b></div>
+      <div class="recap" id="recap"></div>
+    </div>
+    <div class="actions">
+      <button class="again" id="againBtn">Play again</button>
+      <button class="ghost" id="backBtn">Change category</button>
+    </div>
+  </section>
+</main>
+
+<div id="oops" hidden></div>
+<div id="flash" aria-live="polite"><div class="v" id="flashV"></div><div class="w" id="flashW"></div></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ WORDS (A1-B1 vocabulary) ============ */
+  var GROUPS = [
+    {k:"day",   name:"Everyday life",        mix:"Everyday mix"},
+    {k:"world", name:"The wider world",      mix:"Wider world mix"},
+    {k:"pop",   name:"People & pop culture", mix:"Pop culture mix"}
+  ];
+  var DATA = [
+    {id:"food", g:"day", name:"Food & drink", words:["pizza","hamburger","hot dog","sushi","noodles","rice","dumpling","bread","toast","cheese","butter","jam","fried egg","bacon","sausage","chicken wing","steak","fish and chips","salad","soup","sandwich","french fries","popcorn","ice cream","chocolate","birthday cake","cookie","candy","donut","pancake","waffle","honey","peanut butter","yogurt","cereal","pasta","spaghetti","taco","burrito","curry","fried rice","hot pot","barbecue","dim sum","ramen","lollipop","marshmallow","cotton candy","chewing gum","egg tart","apple","banana","orange","watermelon","strawberry","grape","mango","lemon","peach","pear","pineapple","coconut","cherry","blueberry","tomato","potato","carrot","onion","corn","cucumber","mushroom","broccoli","garlic","ginger","lettuce","pumpkin","coffee","tea","milk","juice","beer","wine","cocktail","bubble tea","smoothie","hot chocolate","soda","salt","sugar","chili","peanut","honeydew"]},
+    {id:"house", g:"day", name:"Around the house", words:["toothbrush","toothpaste","towel","mirror","pillow","blanket","bed","sofa","chair","table","desk","lamp","clock","alarm clock","fridge","oven","microwave","kettle","toaster","blender","fork","spoon","knife","chopsticks","plate","bowl","cup","mug","frying pan","cutting board","broom","mop","vacuum cleaner","trash can","soap","shampoo","hair dryer","razor","washing machine","iron","hanger","closet","drawer","shelf","bookcase","umbrella","key","door","doorbell","window","curtain","carpet","remote control","charger","candle","scissors","glue","tape","ladder","toilet paper","toilet","shower","bathtub","sink","stairs","roof","garage","flower pot","light switch","air conditioner","fan","heater","battery","flashlight","matches","needle and thread","mousetrap","piggy bank","photo album","welcome mat"]},
+    {id:"clothes", g:"day", name:"Clothes & style", words:["t-shirt","shirt","sweater","hoodie","jacket","coat","raincoat","jeans","pants","shorts","skirt","dress","suit","tie","bow tie","belt","socks","shoes","sneakers","boots","high heels","sandals","slippers","hat","cap","helmet","scarf","gloves","mittens","sunglasses","glasses","face mask","watch","ring","necklace","earrings","bracelet","backpack","handbag","wallet","purse","suitcase","pocket","zipper","button","shoelaces","pajamas","swimsuit","bikini","uniform","apron","crown","wig","costume","makeup","lipstick","nail polish","perfume","tattoo","braces","ponytail","beard","bald head","muddy boots"]},
+    {id:"body", g:"day", name:"Body & health", words:["head","hair","face","eye","eyebrow","nose","mouth","tooth","tongue","ear","cheek","chin","neck","shoulder","arm","elbow","hand","finger","thumb","wrist","chest","back","stomach","knee","ankle","foot","toe","heel","skin","bone","muscle","heart","brain","blood","headache","stomachache","toothache","fever","runny nose","sore throat","flu","cold","allergy","bruise","broken arm","bandage","crutches","wheelchair","injection","pill","medicine","thermometer","X-ray","hospital","ambulance","stitches","sunburn","hiccups","snore","blink","sweat","tears","itch","scar","deep breath","heartbeat","goosebumps","pulse","bad breath"]},
+    {id:"feelings", g:"day", name:"Feelings", words:["happy","sad","angry","scared","tired","sleepy","hungry","thirsty","shy","proud","jealous","nervous","excited","bored","confused","surprised","embarrassed","lonely","lazy","brave","cold","hot","sick","dizzy","in love","annoyed","relaxed","grumpy","curious","hopeful","stressed","silly","serious","polite","rude","generous","greedy","clumsy","strong","weak","rich","poor","busy","crazy","calm","worried","guilty","disappointed","thankful","homesick","impatient","honest","kind","mean","friendly","funny","smart","stubborn","confident","amazed","frustrated","shocked","cheerful","moody","speechless","heartbroken","relieved","suspicious","desperate","ticklish"]},
+    {id:"actions", g:"day", name:"Actions", words:["jump","run","swim","sleep","sneeze","yawn","cough","cry","laugh","dance","sing","whistle","clap","wave","hug","push","pull","climb","crawl","kick","punch","throw","catch","drive","ride a bike","brush your teeth","wash your hands","take a selfie","text someone","knock on a door","tie your shoes","open a bottle","blow out candles","read a book","paint a picture","cook dinner","sweep the floor","fold clothes","type fast","scroll your phone","wake up","get dressed","fall over","tickle","point","nod","shake hands","bow","salute","shrug","wink","stretch","tiptoe","march","spin","balance","kneel","stand up","lie down","roll over","swing","slide","dig a hole","plant a tree","water the plants","wash the dishes","make the bed","hang up clothes","lock the door","carry a heavy box","lift weights","chase someone","hide","count money","sign your name","cut paper","pour water","drop something","wait in line","cheer","sniff","stir the soup","peel a banana","flip a pancake","juggle","limp","hold your breath"]},
+    {id:"school", g:"day", name:"School & office", words:["pencil","pen","eraser","ruler","sharpener","notebook","textbook","pencil case","crayon","marker","highlighter","chalk","blackboard","whiteboard","classroom","homework","exam","quiz","report card","diploma","graduation cap","library","globe","calculator","abacus","microscope","test tube","lab coat","gym class","recess","school bell","school uniform","field trip","raise your hand","cheat sheet","class president","printer","scanner","stapler","paper clip","sticky note","folder","binder","envelope","stamp","business card","name tag","meeting","presentation","coffee break","deadline","overtime","job interview","resume","promotion","paycheck","cubicle","swivel chair","water cooler","video call","spreadsheet","name on the whiteboard","fire drill","school play","detention","sleeping in class","roll call","group project","pop quiz"]},
+    {id:"animals", g:"world", name:"Animals", words:["dog","cat","elephant","lion","tiger","monkey","snake","shark","whale","dolphin","penguin","kangaroo","giraffe","zebra","bear","panda","rabbit","horse","cow","pig","sheep","chicken","duck","owl","eagle","frog","turtle","crocodile","mosquito","bee","butterfly","spider","ant","crab","octopus","camel","wolf","fox","mouse","bat","goat","parrot","squirrel","snail","dinosaur","hippo","rhino","gorilla","chimpanzee","koala","sloth","deer","donkey","hedgehog","raccoon","skunk","beaver","otter","seal","walrus","polar bear","jellyfish","starfish","seahorse","lobster","shrimp","goldfish","swan","flamingo","peacock","ostrich","pigeon","crow","woodpecker","rooster","turkey","lizard","chameleon","scorpion","ladybug","dragonfly","grasshopper","caterpillar","worm","firefly","moth","puppy","kitten","llama","meerkat"]},
+    {id:"nature", g:"world", name:"Nature & weather", words:["sun","moon","star","cloud","rain","snow","wind","storm","thunder","lightning","rainbow","fog","hail","tornado","hurricane","earthquake","volcano","flood","sunrise","sunset","sky","mountain","hill","valley","river","lake","sea","ocean","beach","island","desert","forest","jungle","cave","waterfall","cliff","field","farm","garden","tree","leaf","branch","root","flower","rose","sunflower","tulip","grass","cactus","seed","rock","sand","mud","snowflake","icicle","puddle","campfire","tent","glacier","iceberg","planet","earth","outer space","comet","eclipse","northern lights","seashell","feather","honeycomb","spider web","bird nest","autumn leaves","cherry blossom","bamboo","heat wave","drizzle","muddy puddle","full moon","shooting star"]},
+    {id:"places", g:"world", name:"Places & landmarks", words:["China","Japan","Korea","France","Italy","Spain","Germany","Brazil","Canada","Mexico","Egypt","India","Russia","Australia","Thailand","Greece","Turkey","Kenya","Switzerland","Iceland","Vietnam","Norway","Argentina","England","Scotland","Ireland","Netherlands","Portugal","Sweden","Finland","Denmark","Poland","Austria","Belgium","Morocco","South Africa","Nigeria","Peru","Chile","Cuba","Jamaica","New Zealand","Indonesia","Malaysia","Philippines","Singapore","Nepal","Mongolia","Paris","London","Tokyo","New York","Beijing","Rome","Venice","Dubai","Shanghai","Bangkok","Hawaii","Las Vegas","Hollywood","Seoul","Sydney","Moscow","Cairo","Berlin","Amsterdam","Hong Kong","Chengdu","Barcelona","Madrid","Milan","Vienna","Prague","Istanbul","Kyoto","Osaka","Taipei","Macau","Toronto","Vancouver","San Francisco","Los Angeles","Chicago","Miami","Rio de Janeiro","Mumbai","Eiffel Tower","Great Wall","Pyramids","Statue of Liberty","Big Ben","Taj Mahal","Mount Everest","Grand Canyon","Niagara Falls","Colosseum","Leaning Tower of Pisa","Sydney Opera House","Mount Fuji","Times Square","Disneyland","Stonehenge"]},
+    {id:"transport", g:"world", name:"Getting around", words:["car","bus","taxi","train","subway","bicycle","motorcycle","scooter","truck","van","ambulance","fire truck","police car","school bus","tractor","bulldozer","crane","garbage truck","airplane","helicopter","hot air balloon","rocket","spaceship","boat","ship","ferry","sailboat","canoe","kayak","submarine","jet ski","cruise ship","skateboard","roller skates","horse carriage","rickshaw","cable car","roller coaster","elevator","escalator","traffic light","crosswalk","roundabout","parking lot","gas station","airport","train station","bus stop","harbor","bridge","tunnel","highway","seat belt","steering wheel","road map","ticket","passport","flat tire","traffic jam","rush hour","speed bump","toll booth","luggage cart"]},
+    {id:"sport", g:"world", name:"Sports & games", words:["football","basketball","tennis","swimming","running","boxing","golf","baseball","volleyball","ping pong","badminton","skiing","ice skating","surfing","diving","cycling","yoga","climbing","karate","bowling","chess","poker","hide and seek","jump rope","marathon","gymnastics","horse riding","fishing","archery","ice hockey","rugby","sailing","snowboarding","weightlifting","wrestling","skateboarding","video games","tug of war","arm wrestling","hopscotch","cheerleading","darts","billiards","rock paper scissors","hula hoop","judo","taekwondo","kung fu","fencing","rowing","triathlon","high jump","long jump","hurdles","javelin","shot put","pole vault","relay race","sumo","cricket","handball","water polo","dodgeball","frisbee","bungee jumping","skydiving","paragliding","rafting","snorkeling","treadmill","push-ups","sit-ups","gold medal","trophy","Olympics","World Cup","stadium","scoreboard","penalty kick","slam dunk","home run","goalkeeper","red card","photo finish","warm-up","hat trick"]},
+    {id:"jobs", g:"pop", name:"Jobs", words:["doctor","nurse","teacher","police officer","firefighter","chef","waiter","pilot","taxi driver","farmer","singer","dancer","actor","painter","photographer","writer","lawyer","judge","scientist","engineer","programmer","dentist","barber","cleaner","postman","soldier","sailor","astronaut","clown","magician","DJ","model","referee","babysitter","mechanic","plumber","gardener","librarian","cashier","tour guide","streamer","barista","student","translator","veterinarian","pharmacist","architect","accountant","receptionist","flight attendant","bus driver","construction worker","electrician","carpenter","butcher","baker","fisherman","miner","security guard","lifeguard","coach","journalist","news anchor","comedian","musician","orchestra conductor","nanny","tailor","blacksmith","detective","spy","pirate","king","queen","knight","ninja","cowboy","monk","boss","intern"]},
+    {id:"screen", g:"pop", name:"Movies & TV", words:["Titanic","Frozen","Avatar","Harry Potter","Spider-Man","Batman","Superman","Star Wars","Jurassic Park","The Lion King","Toy Story","Shrek","Kung Fu Panda","Finding Nemo","Ice Age","Minions","Coco","Zootopia","Moana","Cinderella","Snow White","Mulan","The Matrix","Iron Man","Black Panther","Thor","The Hulk","Fast and Furious","Mission Impossible","James Bond","Jaws","Home Alone","The Hunger Games","Twilight","Friends","Game of Thrones","Squid Game","Stranger Things","Pokemon","SpongeBob","Tom and Jerry","Mr. Bean","The Simpsons","Wednesday","Barbie","Up","Wall-E","Ratatouille","Monsters Inc","Inside Out","Despicable Me","How to Train Your Dragon","Big Hero 6","The Incredibles","Cars","Dumbo","Peter Pan","Beauty and the Beast","The Little Mermaid","Aladdin","Sleeping Beauty","Tarzan","Pinocchio","Alice in Wonderland","The Wizard of Oz","E.T.","Back to the Future","Indiana Jones","Forrest Gump","Rocky","The Terminator","Men in Black","Pirates of the Caribbean","The Lord of the Rings","The Avengers","Captain America","Wonder Woman","Deadpool","Joker","Dune","Interstellar","Inception","Breaking Bad","The Office","The Big Bang Theory","Sherlock","Doctor Who","Peppa Pig","Doraemon","Naruto","One Piece","Dragon Ball","Demon Slayer","Spirited Away","My Neighbor Totoro"]},
+    {id:"toons", g:"pop", name:"Characters", words:["Mickey Mouse","Minnie Mouse","Donald Duck","Goofy","Winnie the Pooh","Tigger","Elsa","Olaf","Woody","Buzz Lightyear","Dory","Simba","Timon","Pumbaa","Ariel","Belle","Rapunzel","Tinker Bell","Pikachu","Charizard","Mario","Luigi","Princess Peach","Bowser","Yoshi","Sonic","Kirby","Zelda","Pac-Man","Angry Birds","Minecraft creeper","Among Us crewmate","Hello Kitty","Astro Boy","Sailor Moon","Goku","Luffy","Puss in Boots","Scooby-Doo","Bugs Bunny","Daffy Duck","Tweety","Road Runner","Popeye","Garfield","Snoopy","Charlie Brown","Dora the Explorer","Elmo","Big Bird","Cookie Monster","Patrick Star","Squidward","Homer Simpson","Bart Simpson","Captain Hook","Ursula","Cruella","Gru","Baby Yoda","Groot","Stitch","Shrek the ogre","Monkey King","Nezha","Doraemon the robot cat","Pleasant Goat","Ultraman","Transformers"]},
+    {id:"people", g:"pop", name:"Famous people", words:["Michael Jackson","Taylor Swift","Beyonce","Elvis Presley","Mozart","Beethoven","Shakespeare","Albert Einstein","Isaac Newton","Leonardo da Vinci","Picasso","Van Gogh","Jackie Chan","Bruce Lee","Elon Musk","Bill Gates","Steve Jobs","Barack Obama","Cristiano Ronaldo","Lionel Messi","Michael Jordan","Kobe Bryant","LeBron James","Usain Bolt","Serena Williams","Tom Cruise","Leonardo DiCaprio","Angelina Jolie","Marilyn Monroe","Charlie Chaplin","Lady Gaga","Ariana Grande","Adele","Eminem","Rihanna","Shakira","BTS","Santa Claus","Cleopatra","Napoleon","Confucius","Mother Teresa","Stephen Curry","Oprah Winfrey","Neil Armstrong","Marie Curie","Charles Darwin","Thomas Edison","Nikola Tesla","Stephen Hawking","Gandhi","Nelson Mandela","Abraham Lincoln","George Washington","Martin Luther King","Queen Elizabeth","Julius Caesar","Christopher Columbus","Marco Polo","Mark Zuckerberg","Jeff Bezos","Walt Disney","The Beatles","Elton John","Bob Marley","Madonna","Ed Sheeran","Justin Bieber","Bruno Mars","Billie Eilish","Jay Chou","Yao Ming","Jack Ma","Roger Federer","Tiger Woods","David Beckham","Dwayne Johnson","Will Smith","Johnny Depp","Emma Watson","Robert Downey Jr.","Keanu Reeves","Audrey Hepburn","Freddie Mercury","Michael Phelps","Simone Biles"]},
+    {id:"music", g:"pop", name:"Music", words:["piano","guitar","electric guitar","violin","cello","drums","flute","trumpet","saxophone","trombone","clarinet","harp","accordion","harmonica","banjo","ukulele","tambourine","xylophone","keyboard","pipe organ","bagpipes","erhu","guzheng","pipa","bamboo flute","maracas","cymbals","gong","bongo drum","microphone","loudspeaker","turntable","karaoke","concert","choir","orchestra","rock band","opera","jazz","hip hop","rap","classical music","pop song","country music","blues","reggae","K-pop","lullaby","national anthem","happy birthday song","humming","beatbox","music video","vinyl record","radio","earbuds","guitar solo","drumroll","air guitar","conductor baton","sheet music","encore","stage dive","off-key singing","sing in the shower","headbanging"]},
+    {id:"holidays", g:"pop", name:"Holidays & parties", words:["birthday party","wedding","Christmas","New Year","Halloween","Thanksgiving","Easter","Valentine's Day","Mother's Day","Father's Day","Chinese New Year","Mid-Autumn Festival","Dragon Boat Festival","Lantern Festival","Ramadan","Diwali","Carnival","Oktoberfest","April Fools' Day","graduation","baby shower","housewarming","picnic","camping trip","fireworks","parade","circus","birthday candles","present","gift wrap","balloon","confetti","party hat","pinata","Christmas tree","Santa hat","reindeer","snowman","Christmas stocking","mistletoe","pumpkin carving","jack-o-lantern","trick or treat","ghost","vampire","witch","zombie","mummy","skeleton","red envelope","mooncake","firecracker","lion dance","dragon boat","champagne toast","midnight countdown","honeymoon","anniversary","farewell party","sleepover","prom night","blind date","surprise party","photo booth"]},
+    {id:"tech", g:"pop", name:"Tech & internet", words:["smartphone","tablet","laptop","desktop computer","monitor","mouse","keyboard","printer","webcam","microphone","headphones","earbuds","smartwatch","fitness tracker","VR headset","drone","robot","game console","game controller","power bank","USB stick","hard drive","SIM card","router","wifi","bluetooth","QR code","barcode","selfie stick","tripod","camera","projector","e-reader","3D printer","smart speaker","security camera","password","screenshot","download","upload","group chat","video call","livestream","hashtag","meme","emoji","like button","follow","unfollow","block someone","notification","dark mode","low battery","loading screen","spam","pop-up ad","autocorrect","typo","airplane mode","screen time","app store","software update","computer virus","hacker","AI chatbot","face unlock","copy and paste","double click","swipe","zoom in","mute","screen share","buffering","404 error","cloud storage","playlist","podcast","subscribe","unread messages","dead phone"]},
+    {id:"family", g:"day", name:"Family & people", words:["mom","dad","baby","grandma","grandpa","brother","sister","twins","cousin","uncle","aunt","neighbor","best friend","boyfriend","girlfriend","husband","wife","bride","groom","pregnant","newborn","toddler","teenager","old man","old lady","stranger","guest","roommate","crush","in-laws","family photo","piggyback ride","bedtime story","pocket money","nagging mom","strict dad","spoiled kid","only child","family dinner","baby crying","changing a diaper","first steps","school pickup","holding hands","matching outfits","family road trip"]},
+    {id:"town", g:"world", name:"Around town", words:["hospital","bank","post office","restaurant","hotel","museum","zoo","movie theater","park","church","temple","market","supermarket","police station","fire station","public library","university","gym","swimming pool","playground","barber shop","bakery","pharmacy","bookstore","cafe","bar","shopping mall","construction site","factory","skyscraper","apartment building","zebra crossing","fountain","statue","park bench","street lamp","mailbox","vending machine","ATM","public toilet","fire hydrant","manhole cover","graffiti wall","food truck","night market","car wash","ice cream truck","revolving door","parking meter","no parking sign"]},
+    {id:"shopping", g:"pop", name:"Shopping & money", words:["shopping cart","shopping basket","receipt","cash","coins","credit card","mobile payment","price tag","discount","big sale","coupon","refund","delivery package","courier","online shopping","add to cart","free shipping","out of stock","window shopping","fitting room","long queue","gift card","tip","restaurant bill","split the bill","change","savings","salary","bonus","budget","expensive","cheap","broke","haggle","Black Friday","flash sale","livestream shopping","unboxing","shopping spree","empty wallet","buy one get one free","counting coins","bank card declined","grocery list"]},
+    {id:"tales", g:"pop", name:"Fairy tales & myths", words:["Little Red Riding Hood","Three Little Pigs","The Ugly Duckling","Goldilocks","Jack and the Beanstalk","Hansel and Gretel","The Tortoise and the Hare","The Boy Who Cried Wolf","The Emperor's New Clothes","Thumbelina","The Frog Prince","Pied Piper","Robin Hood","King Arthur","Excalibur","Merlin","dragon","unicorn","mermaid","fairy","elf","dwarf","giant","troll","genie","magic lamp","magic carpet","crystal ball","magic wand","flying broom","glass slipper","poisoned apple","golden egg","treasure chest","pirate ship","haunted castle","wishing well","talking mirror","Chang'e the moon goddess","Nian monster","Zeus","Hercules","Medusa","Pegasus","phoenix","Loch Ness monster","Bigfoot","Cupid","Tooth Fairy","Easter Bunny"]}
+  ];
+  function pool(list){
+    var seen = {}, out = [];
+    list.forEach(function(c){
+      c.words.forEach(function(w){
+        var k = w.toLowerCase();
+        if(!seen[k]){ seen[k] = 1; out.push(w); }
+      });
+    });
+    return out;
+  }
+  var GMIX = {};
+  GROUPS.forEach(function(g){
+    var items = DATA.filter(function(c){ return c.g === g.k; });
+    GMIX[g.k] = {id:"mix-"+g.k, g:g.k, name:g.mix, words:pool(items), mix:true};
+  });
+  var MIX = {id:"mix", g:"all", name:"Mega mix", words:pool(DATA), mix:true};
+  var CATS = DATA.concat(GROUPS.map(function(g){ return GMIX[g.k]; })).concat([MIX]);
+  var TOTAL = MIX.words.length;
+  var TIMES = [30,60,90,120];
+
+  /* ============ STATE ============ */
+  var LS = "ff.v1.";
+  function load(k, d){ try{ var v = localStorage.getItem(LS+k); return v===null ? d : JSON.parse(v); }catch(e){ return d; } }
+  function save(k, v){ try{ localStorage.setItem(LS+k, JSON.stringify(v)); }catch(e){} }
+
+  var isApple = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  var cfg = {
+    cat: load("cat","animals"),
+    secs: load("secs",60),
+    mode: load("mode","tilt"),
+    sign: load("sign", isApple ? -1 : 1),   /* +1 = spec (screen up -> +z), -1 = inverted */
+    calibrated: load("calibrated", false),
+    invert: load("invert", false)           /* user override if up/down feel swapped */
+  };
+
+  var round = null;          /* {deck, i, log, endAt, timer} */
+  var tilt = 0;              /* -1 screen facing floor ... +1 screen facing sky */
+  var rawZ = 0;
+  var motionSeen = false, orientSeen = false, permAsked = false;
+  var armed = true, flashUntil = 0;
+  var wakeLock = null, audio = null;
+
+  /* Why is tilt not working? Make the answer visible instead of guessable. */
+  var dg = {
+    embedded: (function(){ try{ return window.self !== window.top; }catch(e){ return true; } })(),
+    hasDM: !!window.DeviceMotionEvent,
+    hasDO: !!window.DeviceOrientationEvent,
+    gated: !!(window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission === "function"),
+    perm: "not asked",
+    ev: 0
+  };
+  function diag(){
+    var el = document.getElementById("diag");
+    if(!el) return;
+    el.hidden = false;
+    el.textContent =
+      "embedded:" + (dg.embedded ? "yes (iframe)" : "no (top level)") +
+      " | DeviceMotion:" + (dg.hasDM ? "yes" : "no") +
+      " | asks permission:" + (dg.gated ? "yes (iOS)" : "no") +
+      " | permission:" + dg.perm +
+      " | events:" + dg.ev +
+      " | tilt:" + (dg.ev ? tilt.toFixed(2) : "--");
+  }
+
+  var $ = function(id){ return document.getElementById(id); };
+  function oops(msg){
+    var el = document.getElementById("oops");
+    if(!el) return;
+    el.hidden = false;
+    el.textContent = "Script error: " + msg + "  (tap to dismiss)";
+  }
+  var screens = {setup:$("screen-setup"), count:$("screen-count"), play:$("screen-play"), done:$("screen-done")};
+  function show(name){
+    Object.keys(screens).forEach(function(k){ screens[k].hidden = (k !== name); });
+    window.scrollTo(0,0);
+  }
+
+  /* ============ SOUND ============ */
+  function ac(){
+    try{
+      if(!audio){
+        var C = window.AudioContext || window.webkitAudioContext;
+        if(!C) return null;
+        audio = new C();
+      }
+      if(audio.state === "suspended") audio.resume();
+      return audio;
+    }catch(e){ return null; }
+  }
+  function tone(freq, dur, type, vol, slideTo){
+    try{
+    var c = ac(); if(!c) return;
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type || "square";
+    o.frequency.setValueAtTime(freq, c.currentTime);
+    if(slideTo) o.frequency.linearRampToValueAtTime(slideTo, c.currentTime + dur);
+    g.gain.setValueAtTime(vol === undefined ? 0.16 : vol, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime + dur + 0.02);
+    }catch(e){}
+  }
+  function buzz(ms){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
+  var sfx = {
+    good:  function(){ tone(640, 0.14, "square", 0.17, 1040); buzz(45); },
+    bad:   function(){ tone(190, 0.20, "sawtooth", 0.14, 120); buzz([25,40,25]); },
+    tick:  function(){ tone(1500, 0.045, "sine", 0.09); },
+    go:    function(){ tone(880, 0.22, "square", 0.18, 880); },
+    count: function(){ tone(440, 0.1, "square", 0.13); },
+    end:   function(){ tone(150, 1.0, "sawtooth", 0.2, 90); buzz(600); }
+  };
+
+  /* ============ SETUP UI ============ */
+  function catById(id){
+    for(var i=0;i<CATS.length;i++) if(CATS[i].id === id) return CATS[i];
+    return CATS[0];
+  }
+  function card(c, extra){
+    return '<button class="cat'+extra+'" data-id="'+c.id+'" aria-pressed="'+(c.id===cfg.cat)+'">'+
+           '<span class="n">'+c.name+'</span><span class="c">'+c.words.length+' words</span></button>';
+  }
+  function buildCats(){
+    var html = "";
+    GROUPS.forEach(function(g){
+      var items = DATA.filter(function(c){ return c.g === g.k; });
+      if(!items.length) return;
+      html += '<p class="catgroup">'+g.name+'</p><div class="cats">';
+      items.forEach(function(c){ html += card(c, ""); });
+      html += card(GMIX[g.k], " wide mixcard");
+      html += '</div>';
+    });
+    html += '<div class="cats">'+card(MIX, " wide mixcard mega")+'</div>';
+    $("cats").innerHTML = html;
+    Array.prototype.forEach.call($("cats").querySelectorAll(".cat"), function(b){
+      b.addEventListener("click", function(){
+        cfg.cat = b.dataset.id; save("cat", cfg.cat); paint();
+      });
+    });
+  }
+  function buildTimes(){
+    var html = "";
+    TIMES.forEach(function(t){
+      html += '<button data-t="'+t+'" aria-pressed="'+(t===cfg.secs)+'">'+t+'<small>sec</small></button>';
+    });
+    $("times").innerHTML = html;
+    Array.prototype.forEach.call($("times").children, function(b){
+      b.addEventListener("click", function(){
+        cfg.secs = +b.dataset.t; save("secs", cfg.secs); paint();
+      });
+    });
+  }
+  function bestKey(){ return "best." + cfg.cat + "." + cfg.secs; }
+  function paint(){
+    Array.prototype.forEach.call($("cats").querySelectorAll(".cat"), function(b){
+      b.setAttribute("aria-pressed", String(b.dataset.id === cfg.cat));
+    });
+    Array.prototype.forEach.call($("times").children, function(b){
+      b.setAttribute("aria-pressed", String(+b.dataset.t === cfg.secs));
+    });
+    $("mTilt").setAttribute("aria-pressed", String(cfg.mode === "tilt"));
+    $("mTap").setAttribute("aria-pressed", String(cfg.mode === "tap"));
+    $("catPick").textContent = catById(cfg.cat).name;
+    $("sensor").hidden = (cfg.mode !== "tilt");
+    var b = load(bestKey(), 0);
+    $("bestLine").textContent = b ? ("Best here: " + b + " words in " + cfg.secs + "s") : "No score yet";
+    $("enableBtn").textContent = cfg.invert ? "Flip up/down" : (motionSeen || orientSeen ? "Flip up/down" : "Enable tilt");
+  }
+
+  $("mTilt").addEventListener("click", function(){ cfg.mode="tilt"; save("mode","tilt"); paint(); askMotion(); });
+  $("mTap").addEventListener("click", function(){ cfg.mode="tap"; save("mode","tap"); paint(); });
+
+  $("enableBtn").addEventListener("click", function(){
+    if(motionSeen || orientSeen){
+      cfg.invert = !cfg.invert; save("invert", cfg.invert);
+      $("sensorMsg").innerHTML = "Up/down flipped. Tilt the phone and watch the bar: tilting the screen <strong>toward the floor</strong> should turn it green.";
+      $("sensorMsg").className = "msg";
+    } else {
+      askMotion();
+    }
+  });
+
+  /* ============ MOTION ============ */
+  function askMotion(){
+    if(cfg.mode !== "tilt") return;
+    diag();
+    /* iOS allows exactly ONE permission request per user gesture and throws synchronously
+       on a second one, so ask a single gate -- granting motion covers orientation too. */
+    var DM = window.DeviceMotionEvent, DO = window.DeviceOrientationEvent;
+    var gate = (DM && typeof DM.requestPermission === "function") ? DM
+             : (DO && typeof DO.requestPermission === "function") ? DO : null;
+    if(!gate || permAsked){ attach(); return; }
+    permAsked = true;
+    var pending;
+    try{
+      pending = gate.requestPermission();
+    }catch(err){
+      dg.perm = "threw (" + (err && err.name ? err.name : "unknown") + ")"; diag();
+      denied("The browser refused the sensor request. Tap <strong>Enable tilt</strong> on its own, or switch to <strong>Tap the screen</strong>.");
+      return;
+    }
+    Promise.resolve(pending).then(function(res){
+      dg.perm = res; diag();
+      if(res === "granted"){ attach(); }
+      else { denied("Motion access was blocked. Turn on Settings &rsaquo; Apps &rsaquo; Safari &rsaquo; Motion &amp; Orientation Access, then reload."); }
+    }).catch(function(err){
+      dg.perm = "rejected (" + (err && err.name ? err.name : "unknown") + ")"; diag();
+      denied(dg.embedded
+        ? "This page is <strong>embedded in a frame</strong>, and the frame does not pass the motion sensor through. Open the page on its own address (top level) and tilt will work."
+        : "This browser would not hand over the motion sensor. Switch to <strong>Tap the screen</strong>.");
+    });
+  }
+  function denied(msg){
+    $("sensorMsg").innerHTML = msg;
+    $("sensorMsg").className = "msg warn";
+    $("meter").hidden = true;
+  }
+  function attach(){
+    window.addEventListener("devicemotion", onMotion);
+    window.addEventListener("deviceorientation", onOrient);
+    $("sensorMsg").innerHTML = "Waiting for the sensor&hellip; move the phone a little.";
+    $("sensorMsg").className = "msg";
+    setTimeout(function(){
+      if(!motionSeen && !orientSeen){
+        denied(dg.embedded
+          ? "Permission is fine but <strong>no readings are arriving</strong> &mdash; this page sits inside a frame that filters out sensor events. Open it on its own address and tilt will work."
+          : "No sensor readings on this device. Switch to <strong>Tap the screen</strong>.");
+        diag();
+      }
+    }, 1800);
+  }
+  function sensorLive(){
+    $("sensorMsg").innerHTML = "Sensor live. Tilting the screen <strong>toward the floor</strong> should turn the bar green &mdash; if it is backwards, tap flip.";
+    $("sensorMsg").className = "msg";
+    $("meter").hidden = false;
+    $("enableBtn").textContent = "Flip up/down";
+  }
+  function onMotion(e){
+    var a = e.accelerationIncludingGravity;
+    if(!a || a.z === null || a.z === undefined) return;
+    dg.ev++;
+    if(!motionSeen){ motionSeen = true; sensorLive(); }
+    if(dg.ev % 12 === 1) diag();
+    var m = Math.sqrt((a.x||0)*(a.x||0) + (a.y||0)*(a.y||0) + (a.z||0)*(a.z||0)) || 1;
+    rawZ = a.z / m;
+    tilt = rawZ * cfg.sign * (cfg.invert ? -1 : 1);
+    meter();
+    if(cfg.mode === "tilt") checkTilt();
+  }
+  function onOrient(e){
+    if(e.beta === null || e.gamma === null) return;
+    var R = Math.PI/180;
+    var expect = Math.cos(e.beta*R) * Math.cos(e.gamma*R);  /* +ve = screen faces up */
+    /* Auto-calibrate the accelerometer sign while the phone is held at a readable angle
+       (away from the beta=90 gimbal zone), so iOS and Android both read the same way. */
+    if(motionSeen && !cfg.calibrated && Math.abs(e.beta) < 60 && Math.abs(e.gamma) < 60 &&
+       Math.abs(expect) > 0.35 && Math.abs(rawZ) > 0.35){
+      cfg.sign = (rawZ > 0) === (expect > 0) ? 1 : -1;
+      cfg.calibrated = true;
+      save("sign", cfg.sign); save("calibrated", true);
+    }
+    if(motionSeen) return;              /* accelerometer wins when present */
+    dg.ev++;
+    if(!orientSeen){ orientSeen = true; sensorLive(); }
+    if(dg.ev % 12 === 1) diag();
+    tilt = expect * (cfg.invert ? -1 : 1);
+    meter();
+    if(cfg.mode === "tilt") checkTilt();
+  }
+  function meter(){
+    if($("meter").hidden) return;
+    var f = $("fill"), v = Math.max(-1, Math.min(1, tilt));
+    var pct = Math.abs(v) * 50;
+    f.style.width = pct + "%";
+    f.style.left = v < 0 ? (50 - pct) + "%" : "50%";
+    f.className = "fill " + (v < -0.25 ? "good" : v > 0.25 ? "bad" : "");
+  }
+
+  var TRIGGER = 0.60, NEUTRAL = 0.34;
+  /* Re-arming must never depend on sensor events: when the sensor is silent the taps
+     have to keep working, so this is called from the round clock as well as from tilt. */
+  function rearm(){
+    if(armed || !round || Date.now() <= flashUntil) return;
+    var sensor = motionSeen || orientSeen;
+    if(cfg.mode === "tap" || !sensor || Math.abs(tilt) < NEUTRAL) armed = true;
+  }
+  function checkTilt(){
+    if(!round) return;
+    if(!armed){ rearm(); return; }
+    if(tilt < -TRIGGER) resolve(true);
+    else if(tilt > TRIGGER) resolve(false);
+  }
+
+  /* ============ ROUND ============ */
+  function shuffle(a){
+    a = a.slice();
+    for(var i=a.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  function safe(fn){ try{ fn(); }catch(e){ oops((e && e.message) || "unknown"); } }
+  function begin(){
+    /* Start the round FIRST. Audio, sensor permission, fullscreen and wake lock are all
+       optional and all environment-dependent -- none of them may stop the game starting. */
+    var cat = catById(cfg.cat);
+    round = {cat:cat, deck:shuffle(cat.words), i:0, log:[], endAt:0, timer:null};
+    show("count");
+    $("countKicker").textContent = cfg.mode === "tilt" ? "Phone on your forehead" : "Hold it so you cannot see it";
+    $("countSub").textContent = cat.name + " · " + cfg.secs + " seconds";
+    var n = 3;
+    $("countNum").textContent = n;
+    safe(ac);
+    safe(askMotion);
+    safe(function(){
+      if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    });
+    safe(function(){
+      if(navigator.wakeLock && navigator.wakeLock.request){
+        navigator.wakeLock.request("screen").then(function(l){ wakeLock = l; }).catch(function(){});
+      }
+    });
+    sfx.count();
+    var cd = round.cd = setInterval(function(){
+      n--;
+      if(n > 0){ $("countNum").textContent = n; sfx.count(); }
+      else { clearInterval(cd); round && (round.cd = null); $("countNum").textContent = "GO"; sfx.go(); setTimeout(live, 650); }
+    }, 800);
+  }
+  function live(){
+    if(!round) return;            /* the round was quit while the countdown was still running */
+    show("play");
+    $("hintUp").hidden = false; $("hintDown").hidden = false;
+    var tilting = (cfg.mode === "tilt") && (motionSeen || orientSeen);
+    $("hintUp").textContent = tilting ? "▲ Up — pass" : "▲ Tap up here — pass";
+    $("hintDown").textContent = tilting ? "▼ Down — got it" : "▼ Tap down here — got it";
+    round.endAt = Date.now() + cfg.secs * 1000;
+    armed = true; flashUntil = 0;
+    nextWord();
+    tally();
+    round.timer = setInterval(tickClock, 100);
+    tickClock();
+  }
+  function tickClock(){
+    if(!round) return;
+    var left = Math.max(0, round.endAt - Date.now());
+    var s = Math.ceil(left / 1000);
+    if($("clock").textContent !== String(s)){
+      $("clock").textContent = s;
+      if(s <= 5 && s > 0) sfx.tick();
+    }
+    var low = s <= 10;
+    $("clock").classList.toggle("low", low);
+    $("bar").classList.toggle("low", low);
+    $("bar").style.width = (left / (cfg.secs * 1000) * 100) + "%";
+    rearm();
+    if(left <= 0) finish();
+  }
+  function nextWord(){
+    if(round.i >= round.deck.length){ round.deck = shuffle(round.cat.words); round.i = 0; }
+    $("word").textContent = round.deck[round.i];
+  }
+  function resolve(got){
+    if(!round || !armed) return;
+    armed = false;
+    flashUntil = Date.now() + 560;
+    var w = round.deck[round.i];
+    round.log.push({w:w, got:got});
+    round.i++;
+    (got ? sfx.good : sfx.bad)();
+    var fl = $("flash");
+    $("flashV").textContent = got ? "Got it" : "Pass";
+    $("flashW").textContent = w;
+    fl.className = "on " + (got ? "good" : "bad");
+    nextWord();
+    tally();
+    setTimeout(function(){
+      fl.className = got ? "good" : "bad";
+      rearm();
+    }, 560);
+  }
+  function tally(){
+    var g = 0;
+    round.log.forEach(function(r){ if(r.got) g++; });
+    $("tGood").textContent = g;
+    $("tBad").textContent = round.log.length - g;
+  }
+  function finish(){
+    if(!round) return;
+    clearInterval(round.timer);
+    if(round.cd) clearInterval(round.cd);
+    $("flash").className = "";
+    sfx.end();
+    if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
+    var log = round.log, cat = round.cat;
+    var g = 0;
+    log.forEach(function(r){ if(r.got) g++; });
+    $("doneCat").textContent = cat.name + " · " + cfg.secs + "s";
+    $("doneScore").textContent = g;
+    $("doneUnit").textContent = g === 1 ? "word guessed" : "words guessed";
+    $("doneSplit").textContent = g + " got · " + (log.length - g) + " passed";
+    var best = load(bestKey(), 0);
+    $("bestBadge").hidden = !(g > best);
+    if(g > best) save(bestKey(), g);
+    $("recap").innerHTML = log.length
+      ? log.map(function(r){
+          return '<div class="'+(r.got?"":"miss")+'"><b>'+(r.got?"✓":"✕")+'</b><span>'+r.w+'</span></div>';
+        }).join("")
+      : '<div class="miss"><b>✕</b><span>Nothing played — the round ended early.</span></div>';
+    round = null;
+    paint();
+    show("done");
+  }
+
+  /* ============ INPUT ============ */
+  $("startBtn").addEventListener("click", begin);
+  $("againBtn").addEventListener("click", begin);
+  $("backBtn").addEventListener("click", function(){ show("setup"); });
+  $("oops").addEventListener("click", function(){ $("oops").hidden = true; });
+  $("quit").addEventListener("click", function(e){ e.stopPropagation(); finish(); });
+  $("zoneTop").addEventListener("click", function(){ resolve(false); });
+  $("zoneBot").addEventListener("click", function(){ resolve(true); });
+  document.addEventListener("keydown", function(e){
+    if(!round) return;
+    if(e.key === "ArrowDown" || e.key === " "){ e.preventDefault(); resolve(true); }
+    if(e.key === "ArrowUp"){ e.preventDefault(); resolve(false); }
+    if(e.key === "Escape") finish();
+  });
+
+  /* ============ BOOT ============ */
+  window.addEventListener("error", function(e){ oops((e && e.message) || "unknown"); });
+  window.addEventListener("unhandledrejection", function(e){
+    var r = e && e.reason;
+    oops("promise: " + ((r && (r.message || r.name)) || "unknown"));
+  });
+
+  function boot(){
+    $("wordTotal").textContent = TOTAL + " words";
+    buildCats();
+    buildTimes();
+    paint();
+    show("setup");
+  }
+  if(window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(boot);
+  else boot();
+})();
+</script>

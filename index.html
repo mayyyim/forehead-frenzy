@@ -1,7 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="English charades: phone on your forehead, tilt down to score, up to pass.">
 <title>Forehead Frenzy</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Chivo:ital,wght@0,400;0,600;0,800;1,400&display=swap">
 <style>
+  /* Served standalone, so the baseline the artifact runtime used to supply lives here.
+     [hidden] must win: .screen sets display:flex, and an author rule beats the UA
+     default of display:none, which would otherwise show every screen at once. */
+  [hidden]{display:none !important}
+  img,svg{max-width:100%}
   :root{
     --ink:#190E33;
     --ink-2:#221340;
@@ -107,6 +119,8 @@
          text-transform:uppercase;font-size:1.7rem;letter-spacing:.03em;box-shadow:0 7px 0 var(--amber-deep);transition:transform .08s,box-shadow .08s}
   .start:active{transform:translateY(4px);box-shadow:0 3px 0 var(--amber-deep)}
   .best{text-align:center;font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:var(--lav-dim);font-variant-numeric:tabular-nums}
+  .build{text-align:center;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+         letter-spacing:.14em;color:#5B4A85;margin:0}
   .howto{border-top:1px solid #30204F;padding-top:18px;color:var(--lav-dim);font-size:.8rem;line-height:1.65}
   .howto strong{color:var(--lav);font-weight:600}
   .howto ol{margin:8px 0 0;padding-left:1.3em}
@@ -179,6 +193,8 @@
   }
 </style>
 
+</head>
+<body>
 <main>
   <!-- ===================== SETUP ===================== -->
   <section class="screen" id="screen-setup">
@@ -222,6 +238,7 @@
     <div class="block">
       <button class="start" id="startBtn">Start round</button>
       <p class="best" id="bestLine">No score yet</p>
+      <p class="build">build 6 &middot; 2026-10-17</p>
     </div>
 
     <div class="howto">
@@ -637,13 +654,14 @@
       }
     });
     sfx.count();
-    var cd = setInterval(function(){
+    var cd = round.cd = setInterval(function(){
       n--;
       if(n > 0){ $("countNum").textContent = n; sfx.count(); }
-      else { clearInterval(cd); $("countNum").textContent = "GO"; sfx.go(); setTimeout(live, 650); }
+      else { clearInterval(cd); round && (round.cd = null); $("countNum").textContent = "GO"; sfx.go(); setTimeout(live, 650); }
     }, 800);
   }
   function live(){
+    if(!round) return;            /* the round was quit while the countdown was still running */
     show("play");
     $("hintUp").hidden = false; $("hintDown").hidden = false;
     var tilting = (cfg.mode === "tilt") && (motionSeen || orientSeen);
@@ -657,6 +675,7 @@
     tickClock();
   }
   function tickClock(){
+    if(!round) return;
     var left = Math.max(0, round.endAt - Date.now());
     var s = Math.ceil(left / 1000);
     if($("clock").textContent !== String(s)){
@@ -702,6 +721,7 @@
   function finish(){
     if(!round) return;
     clearInterval(round.timer);
+    if(round.cd) clearInterval(round.cd);
     $("flash").className = "";
     sfx.end();
     if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
@@ -758,3 +778,5 @@
   else boot();
 })();
 </script>
+</body>
+</html>
