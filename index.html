@@ -168,6 +168,10 @@
   .again:active{transform:translateY(3px);box-shadow:0 3px 0 var(--amber-deep)}
   .ghost{border:1.5px solid #4A3570;border-radius:var(--r);padding:15px;font-size:.84rem;letter-spacing:.16em;text-transform:uppercase;color:var(--lav)}
 
+  #oops{position:fixed;left:10px;right:10px;bottom:10px;z-index:90;background:var(--bad);color:#2B0606;
+        font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:11px 13px;border-radius:12px;
+        word-break:break-word}
+
   @media (orientation:landscape) and (max-height:520px){
     #screen-setup{max-width:760px}
     .hint.down{padding-bottom:12px}
@@ -273,6 +277,7 @@
   </section>
 </main>
 
+<div id="oops" hidden></div>
 <div id="flash" aria-live="polite"><div class="v" id="flashV"></div><div class="w" id="flashW"></div></div>
 
 <script>
@@ -377,6 +382,12 @@
   }
 
   var $ = function(id){ return document.getElementById(id); };
+  function oops(msg){
+    var el = document.getElementById("oops");
+    if(!el) return;
+    el.hidden = false;
+    el.textContent = "Script error: " + msg + "  (tap to dismiss)";
+  }
   var screens = {setup:$("screen-setup"), count:$("screen-count"), play:$("screen-play"), done:$("screen-done")};
   function show(name){
     Object.keys(screens).forEach(function(k){ screens[k].hidden = (k !== name); });
@@ -385,15 +396,18 @@
 
   /* ============ SOUND ============ */
   function ac(){
-    if(!audio){
-      var C = window.AudioContext || window.webkitAudioContext;
-      if(!C) return null;
-      audio = new C();
-    }
-    if(audio.state === "suspended") audio.resume();
-    return audio;
+    try{
+      if(!audio){
+        var C = window.AudioContext || window.webkitAudioContext;
+        if(!C) return null;
+        audio = new C();
+      }
+      if(audio.state === "suspended") audio.resume();
+      return audio;
+    }catch(e){ return null; }
   }
   function tone(freq, dur, type, vol, slideTo){
+    try{
     var c = ac(); if(!c) return;
     var o = c.createOscillator(), g = c.createGain();
     o.type = type || "square";
@@ -403,6 +417,7 @@
     g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
     o.connect(g); g.connect(c.destination);
     o.start(); o.stop(c.currentTime + dur + 0.02);
+    }catch(e){}
   }
   function buzz(ms){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
   var sfx = {
@@ -487,25 +502,31 @@
   function askMotion(){
     if(cfg.mode !== "tilt") return;
     diag();
-    var need = (window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission === "function");
-    if(need && !permAsked){
-      permAsked = true;
-      window.DeviceMotionEvent.requestPermission().then(function(res){
-        dg.perm = res; diag();
-        if(res === "granted"){ attach(); }
-        else { denied("Motion access was blocked. Turn on Settings &rsaquo; Apps &rsaquo; Safari &rsaquo; Motion &amp; Orientation Access, then reload."); }
-      }).catch(function(err){
-        dg.perm = "rejected (" + (err && err.name ? err.name : "unknown") + ")"; diag();
-        denied(dg.embedded
-          ? "This page is <strong>embedded in a frame</strong>, and the frame does not pass the motion sensor through. Open the page on its own address (top level) and tilt will work."
-          : "This browser would not hand over the motion sensor. Switch to <strong>Tap the screen</strong>.");
-      });
-      if(window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission === "function"){
-        window.DeviceOrientationEvent.requestPermission().catch(function(){});
-      }
-    } else {
-      attach();
+    /* iOS allows exactly ONE permission request per user gesture and throws synchronously
+       on a second one, so ask a single gate -- granting motion covers orientation too. */
+    var DM = window.DeviceMotionEvent, DO = window.DeviceOrientationEvent;
+    var gate = (DM && typeof DM.requestPermission === "function") ? DM
+             : (DO && typeof DO.requestPermission === "function") ? DO : null;
+    if(!gate || permAsked){ attach(); return; }
+    permAsked = true;
+    var pending;
+    try{
+      pending = gate.requestPermission();
+    }catch(err){
+      dg.perm = "threw (" + (err && err.name ? err.name : "unknown") + ")"; diag();
+      denied("The browser refused the sensor request. Tap <strong>Enable tilt</strong> on its own, or switch to <strong>Tap the screen</strong>.");
+      return;
     }
+    Promise.resolve(pending).then(function(res){
+      dg.perm = res; diag();
+      if(res === "granted"){ attach(); }
+      else { denied("Motion access was blocked. Turn on Settings &rsaquo; Apps &rsaquo; Safari &rsaquo; Motion &amp; Orientation Access, then reload."); }
+    }).catch(function(err){
+      dg.perm = "rejected (" + (err && err.name ? err.name : "unknown") + ")"; diag();
+      denied(dg.embedded
+        ? "This page is <strong>embedded in a frame</strong>, and the frame does not pass the motion sensor through. Open the page on its own address (top level) and tilt will work."
+        : "This browser would not hand over the motion sensor. Switch to <strong>Tap the screen</strong>.");
+    });
   }
   function denied(msg){
     $("sensorMsg").innerHTML = msg;
@@ -594,13 +615,10 @@
     for(var i=a.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
     return a;
   }
+  function safe(fn){ try{ fn(); }catch(e){ oops((e && e.message) || "unknown"); } }
   function begin(){
-    ac();
-    askMotion();
-    try{ if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }catch(e){}
-    if(navigator.wakeLock && navigator.wakeLock.request){
-      navigator.wakeLock.request("screen").then(function(l){ wakeLock = l; }).catch(function(){});
-    }
+    /* Start the round FIRST. Audio, sensor permission, fullscreen and wake lock are all
+       optional and all environment-dependent -- none of them may stop the game starting. */
     var cat = catById(cfg.cat);
     round = {cat:cat, deck:shuffle(cat.words), i:0, log:[], endAt:0, timer:null};
     show("count");
@@ -608,6 +626,16 @@
     $("countSub").textContent = cat.name + " · " + cfg.secs + " seconds";
     var n = 3;
     $("countNum").textContent = n;
+    safe(ac);
+    safe(askMotion);
+    safe(function(){
+      if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    });
+    safe(function(){
+      if(navigator.wakeLock && navigator.wakeLock.request){
+        navigator.wakeLock.request("screen").then(function(l){ wakeLock = l; }).catch(function(){});
+      }
+    });
     sfx.count();
     var cd = setInterval(function(){
       n--;
@@ -701,6 +729,7 @@
   $("startBtn").addEventListener("click", begin);
   $("againBtn").addEventListener("click", begin);
   $("backBtn").addEventListener("click", function(){ show("setup"); });
+  $("oops").addEventListener("click", function(){ $("oops").hidden = true; });
   $("quit").addEventListener("click", function(e){ e.stopPropagation(); finish(); });
   $("zoneTop").addEventListener("click", function(){ resolve(false); });
   $("zoneBot").addEventListener("click", function(){ resolve(true); });
@@ -712,6 +741,12 @@
   });
 
   /* ============ BOOT ============ */
+  window.addEventListener("error", function(e){ oops((e && e.message) || "unknown"); });
+  window.addEventListener("unhandledrejection", function(e){
+    var r = e && e.reason;
+    oops("promise: " + ((r && (r.message || r.name)) || "unknown"));
+  });
+
   function boot(){
     $("wordTotal").textContent = TOTAL + " words";
     buildCats();
