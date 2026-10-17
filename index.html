@@ -574,12 +574,16 @@
   }
 
   var TRIGGER = 0.60, NEUTRAL = 0.34;
+  /* Re-arming must never depend on sensor events: when the sensor is silent the taps
+     have to keep working, so this is called from the round clock as well as from tilt. */
+  function rearm(){
+    if(armed || !round || Date.now() <= flashUntil) return;
+    var sensor = motionSeen || orientSeen;
+    if(cfg.mode === "tap" || !sensor || Math.abs(tilt) < NEUTRAL) armed = true;
+  }
   function checkTilt(){
     if(!round) return;
-    if(!armed){
-      if(Date.now() > flashUntil && Math.abs(tilt) < NEUTRAL) armed = true;
-      return;
-    }
+    if(!armed){ rearm(); return; }
     if(tilt < -TRIGGER) resolve(true);
     else if(tilt > TRIGGER) resolve(false);
   }
@@ -614,8 +618,9 @@
   function live(){
     show("play");
     $("hintUp").hidden = false; $("hintDown").hidden = false;
-    $("hintUp").textContent = cfg.mode === "tilt" ? "▲ Up — pass" : "▲ Tap up here — pass";
-    $("hintDown").textContent = cfg.mode === "tilt" ? "▼ Down — got it" : "▼ Tap down here — got it";
+    var tilting = (cfg.mode === "tilt") && (motionSeen || orientSeen);
+    $("hintUp").textContent = tilting ? "▲ Up — pass" : "▲ Tap up here — pass";
+    $("hintDown").textContent = tilting ? "▼ Down — got it" : "▼ Tap down here — got it";
     round.endAt = Date.now() + cfg.secs * 1000;
     armed = true; flashUntil = 0;
     nextWord();
@@ -634,6 +639,7 @@
     $("clock").classList.toggle("low", low);
     $("bar").classList.toggle("low", low);
     $("bar").style.width = (left / (cfg.secs * 1000) * 100) + "%";
+    rearm();
     if(left <= 0) finish();
   }
   function nextWord(){
@@ -656,7 +662,7 @@
     tally();
     setTimeout(function(){
       fl.className = got ? "good" : "bad";
-      if(cfg.mode === "tap") armed = true;
+      rearm();
     }, 560);
   }
   function tally(){
