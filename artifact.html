@@ -147,8 +147,8 @@
   .zone.bot{bottom:0}
 
   #flash{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;
-         gap:10px;opacity:0;pointer-events:none;transition:opacity .13s ease-out;color:#10210F}
-  #flash.on{opacity:1}
+         gap:10px;opacity:0;pointer-events:none;transition:opacity .22s ease-out;color:#10210F}
+  #flash.on{opacity:1;transition:opacity .04s ease-out}
   #flash.good{background:var(--good)}
   #flash.bad{background:var(--bad);color:#3A0C0C}
   #flash .v{font-family:var(--display);text-transform:uppercase;font-size:clamp(2.6rem,15vw,7rem);line-height:.9}
@@ -228,7 +228,7 @@
     <div class="block">
       <button class="start" id="startBtn">Start round</button>
       <p class="best" id="bestLine">No score yet</p>
-      <p class="build">build 7 &middot; 2026-10-17</p>
+      <p class="build">build 8 &middot; 2026-10-17</p>
     </div>
 
     <div class="howto">
@@ -494,7 +494,10 @@
     $("catPick").textContent = catById(cfg.cat).name;
     $("sensor").hidden = (cfg.mode !== "tilt");
     var b = load(bestKey(), 0);
-    $("bestLine").textContent = b ? ("Best here: " + b + " words in " + cfg.secs + "s") : "No score yet";
+    var left = freshLeft(catById(cfg.cat));
+    $("bestLine").textContent =
+      (b ? "Best here: " + b + " in " + cfg.secs + "s" : "No score yet") +
+      "  \u00b7  " + left + " unseen word" + (left === 1 ? "" : "s") + " left in this deck";
     $("enableBtn").textContent = cfg.invert ? "Flip up/down" : (motionSeen || orientSeen ? "Flip up/down" : "Enable tilt");
   }
 
@@ -608,10 +611,14 @@
   }
 
   var TRIGGER = 0.60, NEUTRAL = 0.34;
+  /* The verdict flash used to gate input for 560ms, which ate real seconds out of
+     every round. The visual and the input lock are now separate concerns: input comes
+     back after GATE_MS, the colour keeps fading on its own afterwards. */
+  var GATE_MS = 170;
   /* Re-arming must never depend on sensor events: when the sensor is silent the taps
      have to keep working, so this is called from the round clock as well as from tilt. */
   function rearm(){
-    if(armed || !round || Date.now() <= flashUntil) return;
+    if(armed || !round || Date.now() < flashUntil) return;
     var sensor = motionSeen || orientSeen;
     if(cfg.mode === "tap" || !sensor || Math.abs(tilt) < NEUTRAL) armed = true;
   }
@@ -628,12 +635,27 @@
     for(var i=a.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
     return a;
   }
+  /* A deck keeps ONE shuffled queue that survives across rounds, so round two carries
+     on where round one stopped instead of reshuffling the same words to the front. */
+  function queueKey(cat){ return "q." + cat.id; }
+  function loadQueue(cat){
+    var q = load(queueKey(cat), null);
+    if(Object.prototype.toString.call(q) !== "[object Array]") q = null;
+    if(q){
+      var live = {};
+      cat.words.forEach(function(w){ live[w] = 1; });
+      q = q.filter(function(w){ return live[w]; });   /* the deck recipe may have changed */
+    }
+    return (q && q.length) ? q : shuffle(cat.words);
+  }
+  function saveQueue(cat, rest){ save(queueKey(cat), rest); }
+  function freshLeft(cat){ return loadQueue(cat).length; }
   function safe(fn){ try{ fn(); }catch(e){ oops((e && e.message) || "unknown"); } }
   function begin(){
     /* Start the round FIRST. Audio, sensor permission, fullscreen and wake lock are all
        optional and all environment-dependent -- none of them may stop the game starting. */
     var cat = catById(cfg.cat);
-    round = {cat:cat, deck:shuffle(cat.words), i:0, log:[], endAt:0, timer:null};
+    round = {cat:cat, deck:loadQueue(cat), i:0, log:[], endAt:0, timer:null};
     show("count");
     $("countKicker").textContent = cfg.mode === "tilt" ? "Phone on your forehead" : "Hold it so you cannot see it";
     $("countSub").textContent = cat.name + " · " + cfg.secs + " seconds";
@@ -686,13 +708,20 @@
     if(left <= 0) finish();
   }
   function nextWord(){
-    if(round.i >= round.deck.length){ round.deck = shuffle(round.cat.words); round.i = 0; }
+    if(round.i >= round.deck.length){
+      /* Queue exhausted mid-round: refill, but put this round's words last so the
+         recycle is never visible as an immediate repeat. */
+      var used = {};
+      round.log.forEach(function(r){ used[r.w] = 1; });
+      var unseen = round.cat.words.filter(function(w){ return !used[w]; });
+      round.deck = round.deck.concat(shuffle(unseen.length ? unseen : round.cat.words));
+    }
     $("word").textContent = round.deck[round.i];
   }
   function resolve(got){
     if(!round || !armed) return;
     armed = false;
-    flashUntil = Date.now() + 560;
+    flashUntil = Date.now() + GATE_MS;
     var w = round.deck[round.i];
     round.log.push({w:w, got:got});
     round.i++;
@@ -704,9 +733,13 @@
     nextWord();
     tally();
     setTimeout(function(){
-      fl.className = got ? "good" : "bad";
+      fl.className = got ? "good" : "bad";   /* drops .on -> fades out via CSS */
+      /* Clear the gate here rather than letting rearm() wait for the next 100ms clock
+         tick: that quantisation stretched the dead window to 170-270ms and swallowed
+         roughly every fifth fast tap. The clock-driven rearm() stays as a safety net. */
+      flashUntil = 0;
       rearm();
-    }, 560);
+    }, GATE_MS);
   }
   function tally(){
     var g = 0;
@@ -718,6 +751,7 @@
     if(!round) return;
     clearInterval(round.timer);
     if(round.cd) clearInterval(round.cd);
+    saveQueue(round.cat, round.deck.slice(round.i));
     $("flash").className = "";
     sfx.end();
     if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
