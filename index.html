@@ -64,7 +64,6 @@
   .label b{font-weight:600;letter-spacing:.08em;color:var(--lav);text-transform:none;font-size:.78rem}
 
   .catwrap{display:flex;flex-direction:column;gap:15px}
-  .catgroup{font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--amber);opacity:.8;margin:0 0 -5px}
   .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:9px}
   .cat.wide{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
   .cat.wide .c{margin-top:0}
@@ -238,7 +237,7 @@
     <div class="block">
       <button class="start" id="startBtn">Start round</button>
       <p class="best" id="bestLine">No score yet</p>
-      <p class="build">build 6 &middot; 2026-10-17</p>
+      <p class="build">build 7 &middot; 2026-10-17</p>
     </div>
 
     <div class="howto">
@@ -302,12 +301,10 @@
   "use strict";
 
   /* ============ WORDS (A1-B1 vocabulary) ============ */
-  var GROUPS = [
-    {k:"day",   name:"Everyday life",        mix:"Everyday mix"},
-    {k:"world", name:"The wider world",      mix:"Wider world mix"},
-    {k:"pop",   name:"People & pop culture", mix:"Pop culture mix"}
-  ];
-  var DATA = [
+  /* The word lists below stay fine-grained on purpose -- they are source material.
+     DECKS further down says which of them combine into a deck the player can pick,
+     so regrouping means editing a recipe, never touching a word list. */
+  var SOURCES = [
     {id:"food", g:"day", name:"Food & drink", words:["pizza","hamburger","hot dog","sushi","noodles","rice","dumpling","bread","toast","cheese","butter","jam","fried egg","bacon","sausage","chicken wing","steak","fish and chips","salad","soup","sandwich","french fries","popcorn","ice cream","chocolate","birthday cake","cookie","candy","donut","pancake","waffle","honey","peanut butter","yogurt","cereal","pasta","spaghetti","taco","burrito","curry","fried rice","hot pot","barbecue","dim sum","ramen","lollipop","marshmallow","cotton candy","chewing gum","egg tart","apple","banana","orange","watermelon","strawberry","grape","mango","lemon","peach","pear","pineapple","coconut","cherry","blueberry","tomato","potato","carrot","onion","corn","cucumber","mushroom","broccoli","garlic","ginger","lettuce","pumpkin","coffee","tea","milk","juice","beer","wine","cocktail","bubble tea","smoothie","hot chocolate","soda","salt","sugar","chili","peanut","honeydew"]},
     {id:"house", g:"day", name:"Around the house", words:["toothbrush","toothpaste","towel","mirror","pillow","blanket","bed","sofa","chair","table","desk","lamp","clock","alarm clock","fridge","oven","microwave","kettle","toaster","blender","fork","spoon","knife","chopsticks","plate","bowl","cup","mug","frying pan","cutting board","broom","mop","vacuum cleaner","trash can","soap","shampoo","hair dryer","razor","washing machine","iron","hanger","closet","drawer","shelf","bookcase","umbrella","key","door","doorbell","window","curtain","carpet","remote control","charger","candle","scissors","glue","tape","ladder","toilet paper","toilet","shower","bathtub","sink","stairs","roof","garage","flower pot","light switch","air conditioner","fan","heater","battery","flashlight","matches","needle and thread","mousetrap","piggy bank","photo album","welcome mat"]},
     {id:"clothes", g:"day", name:"Clothes & style", words:["t-shirt","shirt","sweater","hoodie","jacket","coat","raincoat","jeans","pants","shorts","skirt","dress","suit","tie","bow tie","belt","socks","shoes","sneakers","boots","high heels","sandals","slippers","hat","cap","helmet","scarf","gloves","mittens","sunglasses","glasses","face mask","watch","ring","necklace","earrings","bracelet","backpack","handbag","wallet","purse","suitcase","pocket","zipper","button","shoelaces","pajamas","swimsuit","bikini","uniform","apron","crown","wig","costume","makeup","lipstick","nail polish","perfume","tattoo","braces","ponytail","beard","bald head","muddy boots"]},
@@ -332,6 +329,18 @@
     {id:"shopping", g:"pop", name:"Shopping & money", words:["shopping cart","shopping basket","receipt","cash","coins","credit card","mobile payment","price tag","discount","big sale","coupon","refund","delivery package","courier","online shopping","add to cart","free shipping","out of stock","window shopping","fitting room","long queue","gift card","tip","restaurant bill","split the bill","change","savings","salary","bonus","budget","expensive","cheap","broke","haggle","Black Friday","flash sale","livestream shopping","unboxing","shopping spree","empty wallet","buy one get one free","counting coins","bank card declined","grocery list"]},
     {id:"tales", g:"pop", name:"Fairy tales & myths", words:["Little Red Riding Hood","Three Little Pigs","The Ugly Duckling","Goldilocks","Jack and the Beanstalk","Hansel and Gretel","The Tortoise and the Hare","The Boy Who Cried Wolf","The Emperor's New Clothes","Thumbelina","The Frog Prince","Pied Piper","Robin Hood","King Arthur","Excalibur","Merlin","dragon","unicorn","mermaid","fairy","elf","dwarf","giant","troll","genie","magic lamp","magic carpet","crystal ball","magic wand","flying broom","glass slipper","poisoned apple","golden egg","treasure chest","pirate ship","haunted castle","wishing well","talking mirror","Chang'e the moon goddess","Nian monster","Zeus","Hercules","Medusa","Pegasus","phoenix","Loch Ness monster","Bigfoot","Cupid","Tooth Fairy","Easter Bunny"]}
   ];
+  var DECKS = [
+    {id:"animals",  name:"Animals",            from:["animals"]},
+    {id:"food",     name:"Food & drink",       from:["food"]},
+    {id:"stuff",    name:"Home & clothes",     from:["house","clothes"]},
+    {id:"self",     name:"Body & feelings",    from:["body","feelings"]},
+    {id:"doing",    name:"Actions & sports",   from:["actions","sport"]},
+    {id:"folks",    name:"People & jobs",      from:["jobs","family","people"]},
+    {id:"world",    name:"Places & travel",    from:["places","town","transport","nature"]},
+    {id:"stories",  name:"Screen & stories",   from:["screen","toons","tales"]},
+    {id:"party",    name:"Music & parties",    from:["music","holidays"]},
+    {id:"work",     name:"Work, tech & money", from:["school","tech","shopping"]}
+  ];
   function pool(list){
     var seen = {}, out = [];
     list.forEach(function(c){
@@ -342,13 +351,15 @@
     });
     return out;
   }
-  var GMIX = {};
-  GROUPS.forEach(function(g){
-    var items = DATA.filter(function(c){ return c.g === g.k; });
-    GMIX[g.k] = {id:"mix-"+g.k, g:g.k, name:g.mix, words:pool(items), mix:true};
-  });
-  var MIX = {id:"mix", g:"all", name:"Mega mix", words:pool(DATA), mix:true};
-  var CATS = DATA.concat(GROUPS.map(function(g){ return GMIX[g.k]; })).concat([MIX]);
+  function sourcesFor(ids){
+    return ids.map(function(id){
+      for(var i = 0; i < SOURCES.length; i++) if(SOURCES[i].id === id) return SOURCES[i];
+      throw new Error("deck recipe names a missing source: " + id);
+    });
+  }
+  DECKS.forEach(function(d){ d.words = pool(sourcesFor(d.from)); });
+  var MIX = {id:"mix", name:"Mega mix", words:pool(SOURCES), mix:true};
+  var CATS = DECKS.concat([MIX]);
   var TOTAL = MIX.words.length;
   var TIMES = [30,60,90,120];
 
@@ -456,16 +467,10 @@
            '<span class="n">'+c.name+'</span><span class="c">'+c.words.length+' words</span></button>';
   }
   function buildCats(){
-    var html = "";
-    GROUPS.forEach(function(g){
-      var items = DATA.filter(function(c){ return c.g === g.k; });
-      if(!items.length) return;
-      html += '<p class="catgroup">'+g.name+'</p><div class="cats">';
-      items.forEach(function(c){ html += card(c, ""); });
-      html += card(GMIX[g.k], " wide mixcard");
-      html += '</div>';
-    });
-    html += '<div class="cats">'+card(MIX, " wide mixcard mega")+'</div>';
+    var html = '<div class="cats">';
+    DECKS.forEach(function(d){ html += card(d, ""); });
+    html += card(MIX, " wide mixcard mega");
+    html += '</div>';
     $("cats").innerHTML = html;
     Array.prototype.forEach.call($("cats").querySelectorAll(".cat"), function(b){
       b.addEventListener("click", function(){
@@ -768,6 +773,11 @@
   });
 
   function boot(){
+    /* Deck ids changed when the 23 lists were merged, so a selection saved by an
+       older build can name a deck that no longer exists -- fall back visibly. */
+    var known = false;
+    CATS.forEach(function(c){ if(c.id === cfg.cat) known = true; });
+    if(!known){ cfg.cat = DECKS[0].id; save("cat", cfg.cat); }
     $("wordTotal").textContent = TOTAL + " words";
     buildCats();
     buildTimes();
