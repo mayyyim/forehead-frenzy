@@ -13,7 +13,8 @@ src = io.open("index.html", encoding="utf-8").read()
 # A word on a forehead has to be readable at a glance, so entries are single words
 # except in the decks that are proper nouns by nature, plus a short list of compounds
 # that behave as one lexical item. Anything else is a phrase and gets flagged here.
-PROPER = {"places", "screen", "toons", "people", "tales", "holidays"}
+PROPER = {"places", "screen", "toons", "people", "tales", "holidays",
+          "brands", "heroes", "games", "retro"}
 COMPOUND_OK = {
     "hot dog", "french fries", "ice cream", "bubble tea", "hot pot", "dim sum", "egg tart",
     "fried rice", "peanut butter", "chicken wing", "fried egg", "fish and chips", "cotton candy",
@@ -52,6 +53,7 @@ COMPOUND_OK = {
     "haunted castle", "wishing well", "talking mirror", "404 error",
     "watering can", "bad breath", "group project", "ice cream truck", "fitting room",
     "black friday", "flash sale", "bowling alley", "water ski", "hot spring", "ping pong",
+    "chicken dance",
 }
 
 def audit(src_text):
