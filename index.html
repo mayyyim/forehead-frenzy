@@ -208,7 +208,7 @@
     </div>
 
     <div class="block">
-      <div class="label">Category <b id="catPick">Animals</b></div>
+      <div class="label">Category <b id="catPick">Movies &amp; TV</b></div>
       <div class="catwrap" id="cats" role="group" aria-label="Category"></div>
     </div>
 
@@ -240,7 +240,7 @@
     <div class="block">
       <button class="start" id="startBtn">Start round</button>
       <p class="best" id="bestLine">No score yet</p>
-      <p class="build">build 13 &middot; 2026-10-17</p>
+      <p class="build">build 15 &middot; 2026-10-17</p>
     </div>
 
     <div class="howto">
@@ -281,7 +281,7 @@
   <!-- ===================== RESULTS ===================== -->
   <section class="screen" id="screen-done" hidden>
     <div class="scorecard">
-      <p class="cat-name" id="doneCat">Animals &middot; 60s</p>
+      <p class="cat-name" id="doneCat">Movies &amp; TV &middot; 60s</p>
       <div class="big" id="doneScore">0</div>
       <p class="unit" id="doneUnit">correct</p>
       <div id="bestBadge" hidden><span class="newbest">New best</span></div>
@@ -309,7 +309,6 @@
      DECKS further down says which of them combine into a deck the player can pick,
      so regrouping means editing a recipe, never touching a word list. */
   var SOURCES = [
-    {id:"scenes", name:"Scenes to mime", words:["washing an elephant", "milking a cow", "chasing a tornado", "flipping pancakes", "hailing a taxi", "landing an airplane", "mowing a lawn", "raking leaves", "feeding the ducks", "building a sandcastle", "setting up a tent", "walking with crutches", "sumo wrestling", "digging a hole", "riding bumper cars", "hang gliding", "cutting someone's hair", "swimming with dolphins", "going through airport security", "filling up a car with gas", "ordering food at a restaurant", "operating a jackhammer", "picking apples from a tree", "gathering eggs from a hen house", "climbing Mount Everest", "going on a safari", "performing at a rock concert", "playing a piano recital", "asking for an autograph", "walking through a haunted house", "opening birthday presents", "body surfing", "painting a room", "being a flight attendant", "washing windows on a skyscraper", "finger painting", "ironing a shirt", "baking bread", "making a pizza", "having a food fight", "paddling a canoe", "delivering mail", "riding a motorcycle", "sorting laundry", "playing hopscotch", "dancing a ballet", "rock climbing", "flying a kite", "scuba diving", "building a campfire", "sewing a dress", "filming a movie", "riding a carousel", "visiting the zoo", "whale watching", "decorating for a party", "trick or treating", "riding a chairlift", "practicing karate", "shopping at the mall", "walking a hyper dog", "eating hot soup too fast", "parallel parking", "stepping on a Lego", "untangling earbuds", "opening a chip bag quietly", "falling asleep standing up", "giving a cat a bath", "walking into a glass door", "pulling a push door", "assembling IKEA furniture", "wrapping a present badly", "folding a fitted sheet", "threading a needle", "opening a stuck jar", "catching a mosquito", "carrying too many bags", "running for the bus", "squeezing onto a crowded subway", "fighting an umbrella in the wind", "eating melting ice cream", "eating spaghetti", "shelling a crab", "lighting a barbecue", "blowing out candles", "taking a group selfie", "blow drying your hair", "painting your nails", "walking in high heels", "tying a tie", "putting on a wetsuit", "plucking your eyebrows", "doing a face mask", "snoozing the alarm five times", "opening the fridge and staring", "singing karaoke alone", "playing air guitar seriously", "dancing alone at a party", "photobombing a stranger", "unboxing a parcel", "cosplaying", "taking a bad passport photo", "pretending to like a gift"]},
     {id:"actout", name:"Act it out", words:["jump", "run", "swim", "sneeze", "yawn", "cough", "cry", "laugh", "dance", "sing", "whistle", "clap", "wave", "hug", "push", "pull", "climb", "crawl", "kick", "punch", "throw", "catch", "tickle", "point", "nod", "bow", "salute", "shrug", "wink", "stretch", "tiptoe", "march", "spin", "balance", "kneel", "dig", "swing", "slide", "type", "scroll", "knock", "juggle", "limp", "sniff", "stir", "peel", "flip", "fold", "sweep", "mop", "iron", "fry", "chop", "pour", "bite", "chew", "swallow", "lick", "kiss", "hiccup", "snore", "blink", "stare", "frown", "smile", "grin", "shout", "whisper", "scream", "sigh", "shiver", "tremble", "stumble", "trip", "lift", "carry", "drag", "squeeze", "tear", "zip", "brush", "comb", "shave", "paint", "draw", "count", "hide", "chase", "skip", "hop", "bounce", "dive", "float", "row", "paddle", "pedal", "steer", "knit", "sew", "hammer", "drill", "saw", "plant", "rake", "feed", "pet", "milk", "sprint", "jog", "crouch", "stomp", "tap", "poke", "pinch", "slap", "wrestle", "stack", "wrap", "sharpen", "weigh", "pump", "blow", "suck", "spit", "gargle", "swat", "beckon", "flex", "pose", "shush", "facepalm", "applaud", "curtsy", "wobble", "stagger", "strut", "sashay", "slither", "flap", "flail", "twitch"]},
     {id:"moves", name:"Signature moves", words:["slam dunk", "tennis serve", "golf swing", "butterfly stroke", "penalty kick", "free throw", "home run", "hat trick", "figure skating", "floor routine", "balance beam", "pole vault", "high jump", "long jump", "shot put", "javelin throw", "bowling strike", "hole in one", "knockout punch", "uppercut", "jab", "roundhouse kick", "headbutt", "body slam", "belly flop", "cannonball", "backflip", "cartwheel", "handstand", "somersault", "split", "bridge", "plank", "burpee", "push up", "sit up", "squat", "lunge", "deadlift", "bench press", "jumping jack", "mountain climber", "downward dog", "tree pose", "warrior pose", "sun salutation", "moonwalk", "twerk", "breakdance", "floss", "robot", "worm", "dab", "pirouette", "tango", "salsa", "limbo", "cancan", "waltz", "conga", "macarena", "headbang", "mosh", "hula", "haka", "flamenco", "samba", "jive", "charleston", "disco", "zumba", "chicken dance", "sprinkler", "lasso"]},
     {id:"dance", name:"Dance moves", words:["moonwalk", "twerk", "floss", "robot", "breakdance", "tango", "salsa", "ballet", "limbo", "cancan", "waltz", "conga", "macarena", "shuffle", "zumba", "swing", "polka", "flamenco", "hula", "haka", "charleston", "jive", "samba", "rumba", "foxtrot", "disco", "headbang", "mosh", "pirouette", "splits", "backflip", "cartwheel", "handstand", "worm", "dab", "krump", "voguing", "twist", "jitterbug", "tapdance", "bellydance", "linedance", "clogging", "stomp", "chicken dance", "sprinkler", "lasso"]},
@@ -339,19 +338,12 @@
     {id:"holidays", name:"Holidays & parties", words:["Christmas", "Halloween", "Thanksgiving", "Easter", "birthday", "wedding", "graduation", "picnic", "parade", "circus", "fireworks", "balloon", "confetti", "present", "ribbon", "candle", "pumpkin", "ghost", "vampire", "witch", "zombie", "mummy", "skeleton", "snowman", "reindeer", "sleigh", "stocking", "mistletoe", "wreath", "ornament", "tinsel", "nutcracker", "carol", "eggnog", "mooncake", "firecracker", "lantern", "pinata", "toast", "champagne", "countdown", "honeymoon", "anniversary", "sleepover", "prom", "carnival", "festival", "fair", "banquet", "feast", "ceremony", "bouquet", "veil", "tuxedo", "cheers", "gift", "invitation", "costume", "cake", "candyfloss", "trick-or-treat", "Ramadan", "Diwali", "Hanukkah", "Oktoberfest", "Mardi-Gras", "cupid", "turkey", "cornucopia", "garland", "sparkler", "lei", "piñata", "bonfire", "New Year", "Valentine's Day", "Mother's Day", "Father's Day", "Chinese New Year", "Mid-Autumn Festival", "Dragon Boat Festival", "April Fools' Day", "baby shower", "birthday party", "jack o lantern", "red envelope", "lion dance", "surprise party", "photo booth", "blind date", "farewell party"]}
   ];
   var DECKS = [
-    {id:"scenes", name:"Scenes to mime", from:["scenes"]},
-    {id:"actout", name:"Act it out", from:["actout", "moves"]},
+    {id:"screen", name:"Movies & TV", from:["screen", "toons"]},
+    {id:"heroes", name:"Heroes & villains", from:["heroes", "tales"]},
     {id:"celebs", name:"Celebrities", from:["celebs"]},
-    {id:"screen", name:"Movies & TV", from:["screen"]},
-    {id:"heroes", name:"Heroes & villains", from:["heroes", "toons", "tales"]},
-    {id:"beasts", name:"Animals & monsters", from:["creatures"]},
-    {id:"brands", name:"Brands & gadgets", from:["brands", "tech", "retro"]},
-    {id:"play", name:"Sports & games", from:["sport", "games"]},
-    {id:"food", name:"Food & drink", from:["food"]},
-    {id:"folks", name:"People & jobs", from:["jobs", "family"]},
-    {id:"world", name:"Places & travel", from:["places", "town", "transport", "nature"]},
-    {id:"stuff", name:"Home & style", from:["house", "clothes", "shopping", "school"]},
-    {id:"party", name:"Music & parties", from:["music", "holidays", "dance"]}
+    {id:"actout", name:"Act it out", from:["actout", "moves", "dance"]},
+    {id:"stuff", name:"Everyday stuff", from:["creatures", "brands", "tech", "retro", "games", "sport", "food", "jobs", "family", "places", "town", "transport", "nature", "house", "clothes", "shopping", "school", "music", "holidays"]},
+    {id:"famous", name:"Famous mix", from:["celebs", "screen", "toons", "heroes", "tales", "brands", "retro", "games"], wide:true}
   ];
   function pool(list){
     var seen = {}, out = [];
@@ -384,7 +376,7 @@
                 (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
   var cfg = {
-    cat: load("cat","animals"),
+    cat: load("cat","screen"),
     secs: load("secs",60),
     mode: load("mode","tilt"),
     sign: load("sign", isApple ? -1 : 1),   /* +1 = spec (screen up -> +z), -1 = inverted */
@@ -480,7 +472,7 @@
   }
   function buildCats(){
     var html = '<div class="cats">';
-    DECKS.forEach(function(d){ html += card(d, ""); });
+    DECKS.forEach(function(d){ html += card(d, d.wide ? " wide mixcard" : ""); });
     html += card(MIX, " wide mixcard mega");
     html += '</div>';
     $("cats").innerHTML = html;

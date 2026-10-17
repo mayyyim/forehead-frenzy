@@ -18,7 +18,7 @@ PROPER = {"places", "screen", "toons", "people", "tales", "holidays",
 # Two lists are phrases on purpose: the situation IS the joke ("step on a Lego"), and a
 # sports move only reads as a move when it is named as one ("slam dunk"). The research on
 # real decks is explicit that this is where the laughs come from, so they skip the check.
-PHRASE_BY_DESIGN = {"scenes", "moves"}
+PHRASE_BY_DESIGN = {"moves"}   # a sports move only reads as one when named as one
 COMPOUND_OK = {
     "hot dog", "french fries", "ice cream", "bubble tea", "hot pot", "dim sum", "egg tart",
     "fried rice", "peanut butter", "chicken wing", "fried egg", "fish and chips", "cotton candy",
