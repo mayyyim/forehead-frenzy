@@ -240,7 +240,7 @@
     <div class="block">
       <button class="start" id="startBtn">Start round</button>
       <p class="best" id="bestLine">No score yet</p>
-      <p class="build">build 15 &middot; 2026-10-17</p>
+      <p class="build">build 16 &middot; 2026-11-15</p>
     </div>
 
     <div class="howto">
@@ -385,10 +385,17 @@
   };
 
   var round = null;          /* {deck, i, log, endAt, timer} */
+  /* `round` exists from the first beat of the 3-2-1 countdown, so it cannot double as
+     "input is live" -- that conflation let a shake during the countdown score words.
+     `playing` is true only between live() and finish(). */
+  var playing = false;
   var tilt = 0;              /* -1 screen facing floor ... +1 screen facing sky */
   var rawZ = 0;
+  var gBase = 0;             /* running estimate of the resting gravity magnitude */
+  var shakeUntil = 0;        /* readings stay untrustworthy until this moment */
+  var neutralSince = 0;      /* when the phone entered the neutral band; 0 = not in it */
   var motionSeen = false, orientSeen = false, permAsked = false;
-  var armed = true, flashUntil = 0;
+  var armed = false, flashUntil = 0;
   var wakeLock = null, audio = null;
 
   /* Why is tilt not working? Make the answer visible instead of guessable. */
@@ -590,7 +597,15 @@
     if(dg.ev % 12 === 1) diag();
     var m = Math.sqrt((a.x||0)*(a.x||0) + (a.y||0)*(a.y||0) + (a.z||0)*(a.z||0)) || 1;
     rawZ = a.z / m;
-    tilt = rawZ * cfg.sign * (cfg.invert ? -1 : 1);
+    /* `accelerationIncludingGravity` is gravity PLUS whatever the arm is doing, and the
+       normalisation above divides by the total. A brisk swing therefore shrinks the z
+       component while the phone is still tilted -- for a few frames the phone reads as
+       upright when it is not, which is exactly what used to re-arm the input halfway
+       through the swing back. Flag those frames instead of believing them. */
+    gBase = gBase ? gBase + (m - gBase) * 0.04 : m;
+    if(Math.abs(m - gBase) > gBase * SHAKE) shakeUntil = Date.now() + SHAKE_HOLD;
+    /* Low-pass the signal the game reasons about, so no single sample is ever a verdict. */
+    tilt += (rawZ * cfg.sign * (cfg.invert ? -1 : 1) - tilt) * SMOOTH;
     meter();
     if(cfg.mode === "tilt") checkTilt();
   }
@@ -610,7 +625,7 @@
     dg.ev++;
     if(!orientSeen){ orientSeen = true; sensorLive(); }
     if(dg.ev % 12 === 1) diag();
-    tilt = expect * (cfg.invert ? -1 : 1);
+    tilt += (expect * (cfg.invert ? -1 : 1) - tilt) * SMOOTH;
     meter();
     if(cfg.mode === "tilt") checkTilt();
   }
@@ -628,16 +643,31 @@
      every round. The visual and the input lock are now separate concerns: input comes
      back after GATE_MS, the colour keeps fading on its own afterwards. */
   var GATE_MS = 170;
+  /* Hysteresis in TIME as well as in angle. Re-arming on the first frame that touches the
+     neutral band is not enough, because the swing back from a verdict passes straight
+     through that band: the rest of the very same gesture then resolved a second word.
+     The phone now has to SETTLE near upright for DWELL_MS before input comes back. */
+  var DWELL_MS = 150;
+  var SMOOTH = 0.35;                      /* EMA weight on the newest sample */
+  var SHAKE = 0.30, SHAKE_HOLD = 250;     /* |m-g|/g over SHAKE => ignore for SHAKE_HOLD ms */
   /* Re-arming must never depend on sensor events: when the sensor is silent the taps
      have to keep working, so this is called from the round clock as well as from tilt. */
   function rearm(){
-    if(armed || !round || Date.now() < flashUntil) return;
+    if(armed || !playing || Date.now() < flashUntil) return;
     var sensor = motionSeen || orientSeen;
-    if(cfg.mode === "tap" || !sensor || Math.abs(tilt) < NEUTRAL) armed = true;
+    if(cfg.mode === "tap" || !sensor){ armed = true; return; }
+    if(Math.abs(tilt) >= NEUTRAL || Date.now() < shakeUntil){ neutralSince = 0; return; }
+    if(!neutralSince) neutralSince = Date.now();
+    else if(Date.now() - neutralSince >= DWELL_MS) armed = true;
   }
   function checkTilt(){
-    if(!round) return;
+    if(!playing) return;
     if(!armed){ rearm(); return; }
+    /* Deliberately NOT gated on shakeUntil. Refusing a verdict while the phone is moving
+       swallows a quick flick of the wrist outright: the lateral acceleration dilutes the
+       angle reading, so the only frames that read the tilt truthfully are the still ones
+       at the top of the swing -- precisely the frames such a gate would throw away. The
+       double-fire is stopped where it is actually caused, in rearm(). */
     if(tilt < -TRIGGER) resolve(true);
     else if(tilt > TRIGGER) resolve(false);
   }
@@ -669,6 +699,9 @@
        optional and all environment-dependent -- none of them may stop the game starting. */
     var cat = catById(cfg.cat);
     round = {cat:cat, deck:loadQueue(cat), i:0, log:[], endAt:0, timer:null};
+    /* Dead to input for the whole countdown: the phone is being raised to a forehead,
+       and that travel is not a verdict. live() hands input over. */
+    playing = false; armed = false; neutralSince = 0;
     show("count");
     $("countKicker").textContent = cfg.mode === "tilt" ? "Phone on your forehead" : "Hold it so you cannot see it";
     $("countSub").textContent = cat.name + " · " + cfg.secs + " seconds";
@@ -699,7 +732,12 @@
     $("hintUp").textContent = tilting ? "▲ Up — pass" : "▲ Tap up here — pass";
     $("hintDown").textContent = tilting ? "▼ Down — got it" : "▼ Tap down here — got it";
     round.endAt = Date.now() + cfg.secs * 1000;
-    armed = true; flashUntil = 0;
+    playing = true; flashUntil = 0; neutralSince = 0;
+    /* Still not armed: in tilt mode rearm() grants input once the phone has settled near
+       upright, so the last of the raising motion cannot eat the first word. In tap mode
+       and with a silent sensor it is granted right here, with no delay. */
+    armed = false;
+    rearm();
     nextWord();
     tally();
     round.timer = setInterval(tickClock, 100);
@@ -732,8 +770,9 @@
     $("word").textContent = round.deck[round.i];
   }
   function resolve(got){
-    if(!round || !armed) return;
+    if(!playing || !round || !armed) return;
     armed = false;
+    neutralSince = 0;
     flashUntil = Date.now() + GATE_MS;
     var w = round.deck[round.i];
     round.log.push({w:w, got:got});
@@ -762,6 +801,7 @@
   }
   function finish(){
     if(!round) return;
+    playing = false;
     clearInterval(round.timer);
     if(round.cd) clearInterval(round.cd);
     saveQueue(round.cat, round.deck.slice(round.i));
@@ -798,9 +838,10 @@
   $("zoneBot").addEventListener("click", function(){ resolve(true); });
   document.addEventListener("keydown", function(e){
     if(!round) return;
+    if(e.key === "Escape"){ finish(); return; }
+    if(!playing) return;
     if(e.key === "ArrowDown" || e.key === " "){ e.preventDefault(); resolve(true); }
     if(e.key === "ArrowUp"){ e.preventDefault(); resolve(false); }
-    if(e.key === "Escape") finish();
   });
 
   /* ============ BOOT ============ */

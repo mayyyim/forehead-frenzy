@@ -1,69 +1,51 @@
-// Virtual-clock harness: plays a whole round headlessly and checks scoring repeats.
-const fs = require("fs");
-const html = fs.readFileSync("/Users/may/projects/forehead-frenzy/index.html","utf8");
-const js = html.split("<script>")[1].split("</script>")[0];
-const ids = new Set([...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]));
+/* Plays a whole round headlessly on the TAP path -- the degraded path, where the sensor
+   permission is refused and no readings ever arrive. It has to keep working on its own:
+   the input used to die after one word because re-arming hung off the sensor stream. */
+const R = require(__dirname + "/tools-vdom.js")({ perm: "throw", file: process.argv[2] });
 
-let vclock = 1000, q = [], seq = 0;
-const realNow = Date.now;
-Date.now = () => vclock;
-global.setTimeout  = (fn,ms) => { const h={id:++seq,at:vclock+(ms||0),fn,rep:0}; q.push(h); return h.id; };
-global.setInterval = (fn,ms) => { const h={id:++seq,at:vclock+(ms||0),fn,rep:ms||1}; q.push(h); return h.id; };
-global.clearInterval = id => { q = q.filter(h=>h.id!==id); };
-global.clearTimeout  = global.clearInterval;
-function advance(ms){
-  const end = vclock + ms;
-  for(let guard=0; guard<200000; guard++){
-    const next = q.filter(h=>h.at<=end).sort((a,b)=>a.at-b.at)[0];
-    if(!next) break;
-    vclock = next.at;
-    if(next.rep){ next.at = vclock + next.rep; } else { q = q.filter(h=>h!==next); }
-    try{ next.fn(); }catch(e){ console.log("TIMER THREW:", e.message); }
-  }
-  vclock = end;
+let fails = 0;
+function check(label, actual, expected){
+  const ok = actual === expected;
+  if(!ok) fails++;
+  console.log((ok ? "  PASS  " : "  FAIL  ") + label + " -> " + actual + " (expected " + expected + ")");
 }
 
-const pool = {};
-function mkEl(id){ return {
-  id,_text:"",className:"",hidden:false,innerHTML:"",dataset:{},style:{},listeners:{},children:[],
-  get textContent(){return this._text}, set textContent(v){this._text=String(v)},
-  addEventListener(t,f){(this.listeners[t]=this.listeners[t]||[]).push(f)},
-  setAttribute(){},getAttribute(){return null},
-  classList:{toggle(){},add(){},remove(){}}, querySelectorAll(){return []},
-  click(){(this.listeners.click||[]).forEach(f=>f({stopPropagation(){},preventDefault(){}}))}
-};}
-global.document = {
-  getElementById:id => pool[id] || (pool[id] = ids.has(id) ? mkEl(id) : null),
-  addEventListener(){}, documentElement:{}, querySelectorAll(){return []}
-};
-function DME(){} DME.requestPermission = () => { throw Object.assign(new Error("one per gesture"),{name:"NotAllowedError"}); };
-const store = {};
-global.window = { DeviceMotionEvent:DME, DeviceOrientationEvent:undefined,
-  AudioContext:undefined, webkitAudioContext:undefined,
-  addEventListener(){}, scrollTo(){}, self:1, top:1,
-  localStorage:{getItem:k=>store[k]??null,setItem:(k,v)=>store[k]=v} };
-global.localStorage = window.localStorage;
-global.navigator = { userAgent:"iPhone", vibrate(){}, wakeLock:undefined };
+console.log("1. the round starts");
+R.pool.startBtn.click();
+check("screen-count visible", R.pool["screen-count"].hidden, false);
+R.advance(4000);
+check("screen-play visible", R.pool["screen-play"].hidden, false);
+check("a word is on screen", R.text("word").length > 0, true);
+check("tap hint (no sensor)", R.text("hintDown"), "▼ Tap down here — got it");
+check("no error banner", R.pool.oops.hidden, true);
 
-eval(js);
-
-const g = id => pool[id] ? pool[id].textContent : "(none)";
-console.log("1. start  ->", (pool.startBtn.click(), "clicked"), "| screen-count hidden:", pool["screen-count"].hidden);
-advance(4000);
-console.log("2. after countdown | screen-play hidden:", pool["screen-play"].hidden, "| word:", JSON.stringify(g("word")));
-console.log("   hint:", JSON.stringify(g("hintDown")), "| error banner:", pool.oops.hidden ? "none" : g("oops"));
-
+console.log("\n2. six taps, every third one a pass");
 const words = [];
-for(let i=1;i<=6;i++){
-  words.push(g("word"));
-  (i % 3 === 0 ? pool.zoneTop : pool.zoneBot).click();   // every 3rd one is a pass
-  advance(800);
-  console.log(`   tap ${i}: got=${g("tGood")} passed=${g("tBad")} nextWord=${JSON.stringify(g("word"))}`);
+for(let i = 1; i <= 6; i++){
+  words.push(R.text("word"));
+  (i % 3 === 0 ? R.pool.zoneTop : R.pool.zoneBot).click();
+  R.advance(800);
 }
-console.log("3. distinct words served:", new Set(words).size, "of", words.length);
-advance(60000);
-console.log("4. round ended | screen-done hidden:", pool["screen-done"].hidden,
-            "| score:", g("doneScore"), "| split:", g("doneSplit"));
-console.log("5. error banner at end:", pool.oops.hidden ? "none" : g("oops"));
-Date.now = realNow;
-process.exit(0);
+check("got", R.text("tGood"), "4");
+check("passed", R.text("tBad"), "2");
+check("distinct words served", new Set(words).size, 6);
+
+/* GATE_MS is 170ms on purpose: a longer dead window swallowed roughly every fifth fast
+   tap. Tightening the tilt path must not quietly slow the tap path back down. */
+console.log("\n3. two taps 200ms apart both register");
+R.pool.zoneBot.click();
+R.advance(200);
+R.pool.zoneBot.click();
+R.advance(400);
+check("got after the fast pair", R.text("tGood"), "6");
+
+console.log("\n4. the clock runs out");
+R.advance(60000);
+check("screen-done visible", R.pool["screen-done"].hidden, false);
+check("score", R.text("doneScore"), "6");
+check("split", R.text("doneSplit"), "6 got · 2 passed");
+check("no error banner", R.pool.oops.hidden, true);
+
+console.log(fails ? "\n" + fails + " CHECK(S) FAILED" : "\nall checks passed");
+R.restore();
+process.exit(fails ? 1 : 0);

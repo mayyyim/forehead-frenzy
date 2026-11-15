@@ -7,14 +7,13 @@
 仓库：https://github.com/mayyyim/forehead-frenzy （public，Pages 免费版要求 public）
 
 ## 进行中
-- [ ] **验证 GitHub Pages 上 tilt 是否正常**（agent: 主 Claude，起始: 2026-10-17）
-  下次打开第一步：问用户在 https://mayyyim.github.io/forehead-frenzy/ 上点 `Enable tilt` 的结果。
-  设置页底部现在有一行实时诊断读数，直接照着念就能定位：
-  - `embedded:no (top level)` + `permission:granted` + `events:` 持续增长 → **正常**，本条可关闭
-  - `permission:denied` → iOS 设置 › 应用 › Safari › 动作与方向访问 打开后重载
-  - `permission:rejected (NotAllowedError)` → 权限请求被拒，通常是非 secure context
-  - `events:0` 但 permission 是 granted → 传感器事件被过滤（iframe 场景）
-  - 倾斜条方向相反 → 点 `Flip up/down`（存 `ff.v1.invert`）
+- [ ] **真机复测 build 16 的两个输入修复**（agent: 主 Claude，起始: 2026-11-15）
+  下次打开第一步：让用户确认设置页底部印的是 `build 16`（否则还在吃 Pages 的 10 分钟缓存，
+  带 `?v=16` 打开），然后只验两件事：
+  - 一次 skip 动作只跳**一个**词（挥回额头途中不再误判第二次）
+  - 3-2-1 倒计时期间随便晃手机，开局后比分必须是 0 / 0
+  手感回归点：**快速甩腕**的 skip 仍要立刻响（这条是刻意保下来的取舍，见下方「已修 bug」第 2 条）。
+  若手感变钝 → 调 `DWELL_MS`（150ms）；若仍偶发跳两个 → 调 `SHAKE`（0.30）或 `GATE_MS`（170ms）。
 
 ## 待办
 - [ ] 继续打磨词库"好玩度"（用户已否掉 Body & feelings / 动物堆料 / Feelings & slang
@@ -25,6 +24,11 @@
 - [ ] 回合结束后把漏掉的词加入下一局重练。优先级: 低
 
 ## 已完成
+- [x] **修复「一次 skip 跳两个词」+「倒计时晃手机就判定」**（完成: 2026-11-15，build 16）
+      根因两条互相独立，见下方「已修 bug」。顺带把无头测试脚手架抽成 `tools-vdom.js`，
+      新增 `tools-headless-tilt-test.js` 驱动传感器路径（旧版跑它 6 条 FAIL，新版全绿）。
+- [x] **GitHub Pages 上 tilt 确认可用**（完成: 2026-11-15）
+      用户已在真机上玩到能报告"skip 跳两个"，说明 tilt 路径本身通了，原「进行中」条目关闭。
 - [x] **首页精简到 6 张卡 + 删掉 Scenes to mime**（完成: 2026-10-17，commit: d4d441d）
       12 张同质卡片选择成本太高 → 只留具名"好玩"牌组，其余 19 个源表归并成
       Everyday stuff(1439)；另加 Famous mix(716) 和 Mega mix(2135) 两张宽卡。
@@ -59,6 +63,38 @@
 
 **教训**：降级路径（tap）绝不能把自己的状态机挂在主路径（传感器）的事件流上。
 
+## 已修 bug（build 16）：一次 skip 跳两个词 / 倒计时晃手机就判定（务必别改回去）
+
+两条症状看着像一件事，根因完全独立。
+
+### 1. 倒计时期间输入全程带电
+`begin()` 在 3-2-1 **之前**就建好了 `round`，而 `checkTilt()` 判活性的唯一依据是
+`if(!round) return` —— 于是整个 3 秒倒计时里晃手机就在计分。无头测试里旧版吃掉 8 个词。
+
+修法：新增**显式** `playing` 标志，只在 `live()` 到 `finish()` 之间为真；
+`checkTilt` / `resolve` / 方向键全部改判 `playing`。`round` 不再兼任"输入是否生效"。
+（`Escape` 退出仍在倒计时期间有效——退出不是判决。）
+
+### 2. 挥回途中被一帧噪声骗着 re-arm
+`rearm()` 只要**一帧** `|tilt| < 0.34` 就重新开火。而 `rawZ = a.z / m` 的 `m` 是
+`accelerationIncludingGravity` 的模长，**含手臂自身的加速度**——快速挥动时 z 分量被稀释，
+手机明明还歪着却读成接近竖直。于是 170ms 闸门一过就 re-arm，同一个挥动动作的后半段
+又触发一次。旧版无头测试里一次挥动判出 6 pass + 4 got（过冲还会误判"猜对"）。
+
+修法三件，缺一不可：
+- `tilt` 改成一阶低通（`SMOOTH`=0.35）→ 单帧噪声不再是判决
+- 用 `gBase`（模长的慢速 EMA）识别"正在晃"，`|m-gBase| > 0.30·gBase` 时标记
+  `shakeUntil = now + 250ms`，**这段时间内不许 re-arm**
+- re-arm 要求回到中性区并**连续稳住 150ms**（`DWELL_MS`），不是碰一下就算
+
+**刻意没做的事**：`checkTilt()` 里**不**按 `shakeUntil` 拦判定。拦了会把**快速甩腕**整个吞掉——
+甩动时横向加速度把倾角读数稀释，唯一读得准的就是挥到顶点那一两帧静止帧，而它们正好落在
+屏蔽窗口里。重复触发要在**成因处**（`rearm`）治，不是在判定处。
+`tools-headless-tilt-test.js` 的 §E 就是钉住这个取舍的测试：把那行加回去，§E 立刻 FAIL。
+
+**教训**：`shakeUntil` 是**时间戳**而不是布尔量，传感器中途断流也会自动过期——
+沿用的还是上次那条"降级路径不能把状态机挂在事件流上"。
+
 ## 关键设计决策（改代码前必读）
 
 **翻转检测用重力在屏幕法线（device z 轴）上的投影，不是 beta/gamma 角度。**两个硬理由：
@@ -71,7 +107,9 @@
 用 `cos(beta)·cos(gamma)` 的符号交叉验证加速度计 z 的符号，结果存 `ff.v1.sign`。
 兜底是界面上的 `Flip up/down`（存 `ff.v1.invert`）。
 
-**阈值**：超过 0.60（离竖直约 37°）触发，回到 0.34 以内才接受下一次。
+**阈值**：超过 0.60（离竖直约 37°）触发。回到 0.34 以内**且稳住 `DWELL_MS`=150ms** 才接受下一次
+——"稳住"这个时间条件是 build 16 补的，光有角度条件会被挥回途中的一帧噪声骗过去（见「已修 bug」）。
+另：喂给判定逻辑的 `tilt` 现在是 `SMOOTH`=0.35 的一阶低通，单帧噪声不再构成判决。
 
 **必须 HTTPS 且必须顶层页面**：iOS 的 `DeviceMotionEvent.requestPermission()` 要求
 secure context（所以 `file://` 和局域网 `http://` 都不行），而 iframe 还需要父页面带
